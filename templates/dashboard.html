@@ -95,6 +95,9 @@
                                     {% endif %}
                                 </div>
                             </div>
+                            <div class="info-item action-item">
+                                <button class="btn btn-adjust-time" onclick="openTimeAdjustModal({{ user.id }}, '{{ user.username }}')">Adjust Time</button>
+                            </div>
                         </div>
                         <div class="user-tile-chart">
                             <h3>Time Usage (Last 7 Days)</h3>
@@ -163,5 +166,128 @@
             {% endif %}
         </div>
     </div>
+    
+    <!-- Time Adjustment Modal -->
+    <div id="timeAdjustModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Adjust Time for <span id="modalUsername"></span></h2>
+                <span class="close-modal" onclick="closeTimeAdjustModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Current adjustment: <span id="timeAdjustment">0</span> minutes</p>
+                
+                <div class="time-controls">
+                    <button class="btn btn-time-adjust" onclick="adjustTime(-15)">-15m</button>
+                    <button class="btn btn-time-adjust btn-reset" onclick="resetTime()">Reset</button>
+                    <button class="btn btn-time-adjust" onclick="adjustTime(15)">+15m</button>
+                </div>
+                
+                <div class="modal-footer">
+                    <div id="modalStatus" class="modal-status"></div>
+                    <button class="btn btn-cancel" onclick="closeTimeAdjustModal()">Cancel</button>
+                    <button class="btn btn-confirm" onclick="submitTimeAdjustment()">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Time adjustment modal variables
+        let currentUserId = null;
+        let currentUsername = '';
+        let timeAdjustment = 0; // in minutes
+        
+        // Function to open the time adjustment modal
+        function openTimeAdjustModal(userId, username) {
+            currentUserId = userId;
+            currentUsername = username;
+            document.getElementById('modalUsername').textContent = username;
+            resetTime();
+            document.getElementById('timeAdjustModal').style.display = 'block';
+        }
+        
+        // Function to close the modal
+        function closeTimeAdjustModal() {
+            document.getElementById('timeAdjustModal').style.display = 'none';
+            document.getElementById('modalStatus').textContent = '';
+            document.getElementById('modalStatus').className = 'modal-status';
+        }
+        
+        // Function to adjust time
+        function adjustTime(minutes) {
+            timeAdjustment += minutes;
+            updateTimeDisplay();
+        }
+        
+        // Function to reset time adjustment
+        function resetTime() {
+            timeAdjustment = 0;
+            updateTimeDisplay();
+        }
+        
+        // Function to update the time display
+        function updateTimeDisplay() {
+            const display = document.getElementById('timeAdjustment');
+            display.textContent = timeAdjustment;
+            
+            // Update color based on value
+            if (timeAdjustment > 0) {
+                display.className = 'time-positive';
+            } else if (timeAdjustment < 0) {
+                display.className = 'time-negative';
+            } else {
+                display.className = '';
+            }
+        }
+        
+        // Function to submit the time adjustment
+        function submitTimeAdjustment() {
+            if (timeAdjustment === 0) {
+                alert('No time adjustment specified');
+                return;
+            }
+            
+            const seconds = timeAdjustment * 60; // Convert minutes to seconds
+            const operation = seconds > 0 ? '+' : '-';
+            const absoluteSeconds = Math.abs(seconds);
+            
+            // Show loading status
+            const statusEl = document.getElementById('modalStatus');
+            statusEl.textContent = 'Applying changes...';
+            statusEl.className = 'modal-status status-loading';
+            
+            // Create form data
+            const formData = new FormData();
+            formData.append('user_id', currentUserId);
+            formData.append('operation', operation);
+            formData.append('seconds', absoluteSeconds);
+            
+            // Send request to server
+            fetch('/api/modify-time', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusEl.textContent = 'Success! Time adjusted successfully.';
+                    statusEl.className = 'modal-status status-success';
+                    
+                    // Refresh the page after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1500);
+                } else {
+                    statusEl.textContent = `Error: ${data.message}`;
+                    statusEl.className = 'modal-status status-error';
+                }
+            })
+            .catch(error => {
+                statusEl.textContent = `Error: ${error.message}`;
+                statusEl.className = 'modal-status status-error';
+            });
+        }
+    </script>
 </body>
 </html>

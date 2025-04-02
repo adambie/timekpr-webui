@@ -269,6 +269,54 @@ def get_user_usage(user_id):
         'username': user.username
     })
 
+@app.route('/api/modify-time', methods=['POST'])
+def modify_time():
+    """Modify time left for a user"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+    
+    # Get parameters from request
+    user_id = request.form.get('user_id')
+    operation = request.form.get('operation')
+    seconds = request.form.get('seconds')
+    
+    if not user_id or not operation or not seconds:
+        return jsonify({'success': False, 'message': 'Missing required parameters'}), 400
+    
+    try:
+        user_id = int(user_id)
+        seconds = int(seconds)
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Invalid parameter format'}), 400
+    
+    # Validate operation
+    if operation not in ['+', '-']:
+        return jsonify({'success': False, 'message': "Operation must be '+' or '-'"}), 400
+    
+    # Get user from database
+    user = ManagedUser.query.get_or_404(user_id)
+    
+    # Create SSH client
+    ssh_client = SSHClient(hostname=user.system_ip)
+    
+    # Execute the command
+    success, message = ssh_client.modify_time_left(user.username, operation, seconds)
+    
+    if success:
+        # Update user info to reflect changes
+        is_valid, _, config_dict = ssh_client.validate_user(user.username)
+        if is_valid and config_dict:
+            user.last_checked = datetime.utcnow()
+            user.last_config = json.dumps(config_dict)
+            db.session.commit()
+    
+    return jsonify({
+        'success': success,
+        'message': message,
+        'username': user.username,
+        'refresh': success  # Tell the client to refresh data if successful
+    })
+
 # With app context
 with app.app_context():
     db.create_all()
