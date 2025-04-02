@@ -95,6 +95,14 @@
                                     {% endif %}
                                 </div>
                             </div>
+                            {% if user.id|string in pending_adjustments %}
+                            <div class="info-item pending-item">
+                                <div class="info-label">Pending Time Adjustment:</div>
+                                <div class="info-value pending-value">
+                                    {{ pending_adjustments[user.id|string] }}
+                                </div>
+                            </div>
+                            {% endif %}
                             <div class="info-item action-item">
                                 <button class="btn btn-adjust-time" onclick="openTimeAdjustModal({{ user.id }}, '{{ user.username }}')">Adjust Time</button>
                             </div>

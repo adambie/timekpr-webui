@@ -603,6 +603,18 @@ label {
     font-weight: bold;
 }
 
+/* Pending adjustment styles */
+.pending-item {
+    grid-column: span 2;
+    background-color: #fff8e1;
+    border: 1px solid #ffecb3;
+}
+
+.pending-value {
+    font-weight: bold;
+    font-style: italic;
+}
+
 .modal-status {
     flex-grow: 1;
     padding-right: 20px;

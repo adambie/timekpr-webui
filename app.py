@@ -54,8 +54,12 @@ def dashboard():
         flash('Please login first', 'warning')
         return redirect(url_for('login'))
     
-    # Get all valid users
+    # Get all valid users - make sure we're getting fresh data by expiring SQLAlchemy's cache
+    db.session.expire_all()
     users = ManagedUser.query.filter_by(is_valid=True).all()
+    
+    # Track users with pending time adjustments
+    pending_adjustments = {}
     
     # Prepare user data for the dashboard
     user_data = []
@@ -72,16 +76,25 @@ def dashboard():
         else:
             time_left_formatted = "Unknown"
         
+        # Do NOT format last_checked time - pass the datetime object directly
+        # So the template can format it
+        
+        # Check for pending time adjustments
+        if user.pending_time_adjustment is not None and user.pending_time_operation is not None:
+            minutes = user.pending_time_adjustment // 60
+            operation = user.pending_time_operation
+            pending_adjustments[str(user.id)] = f"{operation}{minutes} minutes"
+        
         user_data.append({
             'id': user.id,
             'username': user.username,
             'system_ip': user.system_ip,
-            'last_checked': user.last_checked,
+            'last_checked': user.last_checked,  # Keep as datetime object
             'usage_data': usage_data,
             'time_left': time_left_formatted
         })
     
-    return render_template('dashboard.html', users=user_data)
+    return render_template('dashboard.html', users=user_data, pending_adjustments=pending_adjustments)
 
 @app.route('/admin')
 def admin():
@@ -308,14 +321,31 @@ def modify_time():
         if is_valid and config_dict:
             user.last_checked = datetime.utcnow()
             user.last_config = json.dumps(config_dict)
+            # Clear any pending adjustments since we succeeded
+            user.pending_time_adjustment = None
+            user.pending_time_operation = None
             db.session.commit()
-    
-    return jsonify({
-        'success': success,
-        'message': message,
-        'username': user.username,
-        'refresh': success  # Tell the client to refresh data if successful
-    })
+            
+        return jsonify({
+            'success': True,
+            'message': message,
+            'username': user.username,
+            'refresh': True
+        })
+    else:
+        # Store as pending adjustment if it failed
+        # First clear any existing pending adjustment
+        user.pending_time_adjustment = seconds
+        user.pending_time_operation = operation
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,  # We report success since we stored it for later
+            'message': f"Computer seems to be offline. Time adjustment of {operation}{seconds} seconds has been queued and will be applied when the computer comes online.",
+            'username': user.username,
+            'pending': True,
+            'refresh': True
+        })
 
 # With app context
 with app.app_context():

@@ -1,22 +1,44 @@
 import os
 import sys
+import shutil
 import sqlite3
 
-# Make sure all imports are available from root directory
-sys.path.insert(0, os.getcwd())
+# List of potential cache files to remove
+CACHE_FILES = [
+    '__pycache__',
+    '*.pyc',
+    '.pytest_cache',
+    '.cache',
+    '.sqlalchemy_cache'
+]
 
-# Delete the existing database file if it exists
+print("===== COMPLETE APPLICATION RESET =====")
+
+# 1. Remove any __pycache__ directories
+print("\nRemoving Python cache files...")
+for root, dirs, files in os.walk('.'):
+    for dir in dirs:
+        if dir == '__pycache__':
+            cache_path = os.path.join(root, dir)
+            print(f"Removing: {cache_path}")
+            shutil.rmtree(cache_path)
+    for file in files:
+        if file.endswith('.pyc'):
+            pyc_path = os.path.join(root, file)
+            print(f"Removing: {pyc_path}")
+            os.remove(pyc_path)
+
+# 2. Delete the existing database
 DB_PATH = 'timekpr.db'
 if os.path.exists(DB_PATH):
-    print(f"Removing existing database file: {DB_PATH}")
+    print(f"\nRemoving existing database: {DB_PATH}")
     os.remove(DB_PATH)
 
-# Create the database manually with explicit schema
-print("Creating new database...")
+# 3. Create a new database with proper schema
+print("\nCreating new database with correct schema...")
 conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
 
-# Create managed_user table with all columns
 cursor.execute('''
 CREATE TABLE managed_user (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,7 +54,6 @@ CREATE TABLE managed_user (
 ''')
 print("Created managed_user table")
 
-# Create user_time_usage table
 cursor.execute('''
 CREATE TABLE user_time_usage (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -45,29 +66,20 @@ CREATE TABLE user_time_usage (
 ''')
 print("Created user_time_usage table")
 
-# Commit changes and close connection
 conn.commit()
 conn.close()
 
-# Verify tables and columns
+# 4. Verify the schema
+print("\nVerifying database schema...")
 conn = sqlite3.connect(DB_PATH)
 cursor = conn.cursor()
 
-# Check tables
-cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-tables = cursor.fetchall()
-print("\nCreated tables:")
-for table in tables:
-    print(f"- {table[0]}")
-
-# Check managed_user columns
 cursor.execute("PRAGMA table_info(managed_user)")
 columns = cursor.fetchall()
 print("\nmanaged_user columns:")
 for col in columns:
     print(f"- {col[1]} ({col[2]})")
 
-# Check user_time_usage columns
 cursor.execute("PRAGMA table_info(user_time_usage)")
 columns = cursor.fetchall()
 print("\nuser_time_usage columns:")
@@ -76,5 +88,6 @@ for col in columns:
 
 conn.close()
 
-print("\nDatabase rebuilt successfully!")
-print("Now you can run your Flask application.")
+print("\n===== RESET COMPLETE =====")
+print("Now restart your Python interpreter and run your application.")
+print("IMPORTANT: Make sure to exit the Python interpreter completely and start a new one!")
