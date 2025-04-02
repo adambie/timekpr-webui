@@ -93,20 +93,34 @@ def admin():
     users = ManagedUser.query.all()
     return render_template('admin.html', users=users)
 
-@app.route('/start-tasks')
-def start_tasks():
-    """Manually start the background task manager"""
+@app.route('/api/task-status')
+def get_task_status():
+    """Get the status of the background task manager"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+    
+    status = task_manager.get_status()
+    return jsonify({
+        'success': True,
+        'status': status
+    })
+
+@app.route('/restart-tasks')
+def restart_tasks():
+    """Restart the background task manager"""
     if not session.get('logged_in'):
         flash('Please login first', 'warning')
         return redirect(url_for('login'))
     
-    if not task_manager.running:
-        task_manager.start()
-        flash('Background tasks started', 'success')
-    else:
-        flash('Background tasks are already running', 'info')
+    task_manager.restart()
+    flash('Background tasks restarted', 'success')
     
-    return redirect(url_for('admin'))
+    # Redirect back to the referring page
+    referrer = request.referrer
+    if referrer:
+        return redirect(referrer)
+    else:
+        return redirect(url_for('dashboard'))
 
 @app.route('/logout')
 def logout():
@@ -259,11 +273,9 @@ def get_user_usage(user_id):
 with app.app_context():
     db.create_all()
     print("Database tables verified")
-
-# Only start task manager after ensuring database is configured correctly
-# Comment this out initially to avoid startup issues
-# with app.app_context():
-#     task_manager.start()
+    # Start background tasks automatically
+    task_manager.start()
+    print("Background tasks started automatically")
 
 if __name__ == '__main__':
     app.run(debug=True)

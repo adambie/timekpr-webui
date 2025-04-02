@@ -29,12 +29,20 @@ class BackgroundTaskManager:
         self.thread.start()
         logger.info("Background task manager started")
     
-    def stop(self):
-        """Stop the background task manager"""
-        self.running = False
-        if self.thread:
-            self.thread.join(timeout=2)
-        logger.info("Background task manager stopped")
+    def restart(self):
+        """Restart the background task manager"""
+        self.stop()
+        time.sleep(1)  # Give it a moment to fully stop
+        self.start()
+        logger.info("Background task manager restarted")
+        
+    def get_status(self):
+        """Get the status of the background task manager"""
+        return {
+            'running': self.running,
+            'thread_alive': self.thread.is_alive() if self.thread else False,
+            'last_error': getattr(self, 'last_error', None)
+        }
     
     def _run_tasks(self):
         """Main task loop"""
@@ -42,11 +50,17 @@ class BackgroundTaskManager:
             try:
                 with self.app.app_context():
                     self._update_user_data()
+                self.last_error = None  # Clear error on successful run
             except Exception as e:
-                logger.error(f"Error in background task: {str(e)}")
+                error_msg = f"Error in background task: {str(e)}"
+                logger.error(error_msg)
+                self.last_error = {
+                    'message': error_msg,
+                    'time': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                }
             
-            # Sleep for 1 minute before next run
-            for _ in range(60):  #  60 seconds
+            # Sleep for 5 minutes before next run
+            for _ in range(300):  # 5 minutes * 60 seconds
                 if not self.running:
                     break
                 time.sleep(1)

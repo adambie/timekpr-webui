@@ -418,6 +418,52 @@ label {
     background-color: #d35400;
 }
 
+/* Task status styles */
+.task-status-container {
+    display: flex;
+    align-items: center;
+    margin-right: 15px;
+}
+
+.task-status {
+    font-size: 0.9rem;
+    color: #2c3e50;
+    margin-right: 8px;
+}
+
+.status-active {
+    color: #27ae60;
+    font-weight: 600;
+}
+
+.status-inactive {
+    color: #e74c3c;
+    font-weight: 600;
+}
+
+.status-unknown, .status-error {
+    color: #f39c12;
+    font-weight: 600;
+}
+
+.btn-restart {
+    padding: 5px 8px;
+    background-color: #7f8c8d;
+    width: auto;
+    min-width: 32px;
+    height: 32px;
+    line-height: 22px;
+}
+
+.btn-restart:hover {
+    background-color: #2c3e50;
+}
+
+.restart-icon {
+    font-size: 1.2rem;
+    font-weight: bold;
+}
+
 @media (max-width: 1200px) {
     .user-grid {
         grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));

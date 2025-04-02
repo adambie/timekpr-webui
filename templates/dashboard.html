@@ -12,10 +12,57 @@
         <header class="dashboard-header">
             <h1>Timekpr Dashboard</h1>
             <div class="user-controls">
+                <div class="task-status-container">
+                    <span class="task-status">
+                        Background Tasks: <span id="task-status-indicator" class="status-unknown">Unknown</span>
+                    </span>
+                    <a href="{{ url_for('restart_tasks') }}" class="btn btn-sm btn-restart" title="Restart Background Tasks">
+                        <span class="restart-icon">↻</span>
+                    </a>
+                </div>
                 <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin Panel</a>
                 <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
             </div>
         </header>
+        
+        <script>
+            // Function to update the task status indicator
+            function updateTaskStatus() {
+                fetch('/api/task-status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const indicator = document.getElementById('task-status-indicator');
+                            const status = data.status;
+                            
+                            if (status.running && status.thread_alive) {
+                                indicator.className = 'status-active';
+                                indicator.textContent = 'Active';
+                            } else {
+                                indicator.className = 'status-inactive';
+                                indicator.textContent = 'Inactive';
+                            }
+                            
+                            // Set tooltip to show last error if any
+                            if (status.last_error) {
+                                indicator.title = `Last error: ${status.last_error.message} at ${status.last_error.time}`;
+                            } else {
+                                indicator.title = 'Background tasks are running normally';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching task status:', error);
+                        const indicator = document.getElementById('task-status-indicator');
+                        indicator.className = 'status-error';
+                        indicator.textContent = 'Error';
+                    });
+            }
+            
+            // Check status immediately and then every 30 seconds
+            updateTaskStatus();
+            setInterval(updateTaskStatus, 30000);
+        </script>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
