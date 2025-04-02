@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timekpr Admin Dashboard</title>
+    <title>Timekpr Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 </head>
 <body class="dashboard-body">
     <div class="dashboard-container">
         <header class="dashboard-header">
-            <h1>Timekpr Admin Dashboard</h1>
+            <h1>Timekpr Dashboard</h1>
             <div class="user-controls">
+                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin Panel</a>
                 <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
             </div>
         </header>
@@ -23,86 +25,95 @@
             {% endif %}
         {% endwith %}
         
-        <div class="dashboard-main">
-            <div class="card">
-                <div class="card-header">
-                    <h2>Add New User</h2>
-                </div>
-                <div class="card-body">
-                    <form action="{{ url_for('add_user') }}" method="POST">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="username">Username</label>
-                                <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required>
+        <div class="user-grid">
+            {% if users %}
+                {% for user in users %}
+                    <div class="user-tile">
+                        <div class="user-tile-header">
+                            <h2>{{ user.username }}</h2>
+                            <div class="user-location">{{ user.system_ip }}</div>
+                        </div>
+                        <div class="user-tile-info">
+                            <div class="info-item">
+                                <div class="info-label">Time Left Today:</div>
+                                <div class="info-value">{{ user.time_left }}</div>
                             </div>
-                            <div class="form-group">
-                                <label for="system_ip">System IP</label>
-                                <input type="text" id="system_ip" name="system_ip" class="form-control" placeholder="Enter IP address" required>
-                            </div>
-                            <div class="form-group form-button">
-                                <button type="submit" class="btn btn-add">Add User</button>
+                            <div class="info-item">
+                                <div class="info-label">Last Updated:</div>
+                                <div class="info-value">
+                                    {% if user.last_checked %}
+                                        {{ user.last_checked.strftime('%Y-%m-%d %H:%M') }}
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
-                    </form>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <h2>Managed Users</h2>
-                </div>
-                <div class="card-body">
-                    {% if users %}
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Username</th>
-                                        <th>System IP</th>
-                                        <th>Status</th>
-                                        <th>Added On</th>
-                                        <th>Last Checked</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for user in users %}
-                                        <tr>
-                                            <td>{{ user.username }}</td>
-                                            <td>{{ user.system_ip }}</td>
-                                            <td>
-                                                {% if user.is_valid %}
-                                                    <span class="status status-valid">Valid</span>
-                                                {% else %}
-                                                    <span class="status status-invalid">Invalid</span>
-                                                {% endif %}
-                                            </td>
-                                            <td>{{ user.date_added.strftime('%Y-%m-%d %H:%M') }}</td>
-                                            <td>
-                                                {% if user.last_checked %}
-                                                    {{ user.last_checked.strftime('%Y-%m-%d %H:%M') }}
-                                                {% else %}
-                                                    Never
-                                                {% endif %}
-                                            </td>
-                                            <td class="actions">
-                                                <a href="{{ url_for('validate_user', user_id=user.id) }}" class="btn btn-sm btn-validate">Validate</a>
-                                                <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" class="inline-form">
-                                                    <button type="submit" class="btn btn-sm btn-delete">Delete</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+                        <div class="user-tile-chart">
+                            <h3>Time Usage (Last 7 Days)</h3>
+                            <canvas id="chart-{{ user.id }}" width="400" height="200"></canvas>
                         </div>
-                    {% else %}
-                        <div class="empty-state">
-                            <p>No users have been added yet.</p>
-                        </div>
-                    {% endif %}
+                    </div>
+                    
+                    <script>
+                        (function() {
+                            const ctx = document.getElementById('chart-{{ user.id }}').getContext('2d');
+                            
+                            // Prepare data
+                            const labels = [];
+                            const values = [];
+                            
+                            {% for date, time_spent in user.usage_data.items() %}
+                                labels.push('{{ date }}');
+                                values.push({{ time_spent / 3600 }});  // Convert seconds to hours
+                            {% endfor %}
+                            
+                            const chart = new Chart(ctx, {
+                                type: 'bar',
+                                data: {
+                                    labels: labels,
+                                    datasets: [{
+                                        label: 'Hours Used',
+                                        data: values,
+                                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                                        borderColor: 'rgba(54, 162, 235, 1)',
+                                        borderWidth: 1
+                                    }]
+                                },
+                                options: {
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            title: {
+                                                display: true,
+                                                text: 'Hours'
+                                            }
+                                        },
+                                        x: {
+                                            title: {
+                                                display: true,
+                                                text: 'Date'
+                                            }
+                                        }
+                                    },
+                                    plugins: {
+                                        legend: {
+                                            display: false
+                                        }
+                                    },
+                                    maintainAspectRatio: false
+                                }
+                            });
+                        })();
+                    </script>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state full-width">
+                    <h2>No Users Available</h2>
+                    <p>No valid users have been added yet. Go to the Admin Panel to add and manage users.</p>
+                    <a href="{{ url_for('admin') }}" class="btn btn-admin">Go to Admin Panel</a>
                 </div>
-            </div>
+            {% endif %}
         </div>
     </div>
 </body>

@@ -1,9 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 import os
-from datetime import datetime
+from datetime import datetime, date, timedelta
+import json
+import logging
 
-from database import db, ManagedUser
+from database import db, ManagedUser, UserTimeUsage
 from ssh_helper import SSHClient
+from task_manager import BackgroundTaskManager
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -12,6 +21,10 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize the database
 db.init_app(app)
+
+# Initialize background task manager
+task_manager = BackgroundTaskManager()
+task_manager.init_app(app)
 
 # Hardcoded credentials
 ADMIN_USERNAME = 'admin'
@@ -41,9 +54,59 @@ def dashboard():
         flash('Please login first', 'warning')
         return redirect(url_for('login'))
     
+    # Get all valid users
+    users = ManagedUser.query.filter_by(is_valid=True).all()
+    
+    # Prepare user data for the dashboard
+    user_data = []
+    for user in users:
+        # Get usage data for charts
+        usage_data = user.get_recent_usage(days=7)
+        
+        # Get time left today if available
+        time_left = user.get_config_value('TIME_LEFT_DAY')
+        if time_left is not None:
+            time_left_hours = time_left // 3600
+            time_left_minutes = (time_left % 3600) // 60
+            time_left_formatted = f"{time_left_hours}h {time_left_minutes}m"
+        else:
+            time_left_formatted = "Unknown"
+        
+        user_data.append({
+            'id': user.id,
+            'username': user.username,
+            'system_ip': user.system_ip,
+            'last_checked': user.last_checked,
+            'usage_data': usage_data,
+            'time_left': time_left_formatted
+        })
+    
+    return render_template('dashboard.html', users=user_data)
+
+@app.route('/admin')
+def admin():
+    if not session.get('logged_in'):
+        flash('Please login first', 'warning')
+        return redirect(url_for('login'))
+    
     # Get all managed users
     users = ManagedUser.query.all()
-    return render_template('dashboard.html', users=users)
+    return render_template('admin.html', users=users)
+
+@app.route('/start-tasks')
+def start_tasks():
+    """Manually start the background task manager"""
+    if not session.get('logged_in'):
+        flash('Please login first', 'warning')
+        return redirect(url_for('login'))
+    
+    if not task_manager.running:
+        task_manager.start()
+        flash('Background tasks started', 'success')
+    else:
+        flash('Background tasks are already running', 'info')
+    
+    return redirect(url_for('admin'))
 
 @app.route('/logout')
 def logout():
@@ -61,35 +124,51 @@ def add_user():
     
     if not username or not system_ip:
         flash('Both username and system IP are required', 'danger')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('admin'))
     
     # Check if user already exists
     existing_user = ManagedUser.query.filter_by(username=username, system_ip=system_ip).first()
     
     if existing_user:
         flash(f'User {username} on {system_ip} already exists', 'warning')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('admin'))
     
     # Create new user
     new_user = ManagedUser(username=username, system_ip=system_ip)
     
     # Validate with timekpr
     ssh_client = SSHClient(hostname=system_ip)
-    is_valid, message = ssh_client.validate_user(username)
+    is_valid, message, config_dict = ssh_client.validate_user(username)
     
     new_user.is_valid = is_valid
     new_user.last_checked = datetime.utcnow()
     
-    # Save to database
-    db.session.add(new_user)
-    db.session.commit()
-    
-    if is_valid:
+    if is_valid and config_dict:
+        new_user.last_config = json.dumps(config_dict)
+        
+        # Add the user to get an ID first
+        db.session.add(new_user)
+        db.session.commit()
+        
+        # Add today's usage data
+        today = date.today()
+        time_spent = config_dict.get('TIME_SPENT_DAY', 0)
+        
+        usage = UserTimeUsage(
+            user_id=new_user.id,
+            date=today,
+            time_spent=time_spent
+        )
+        db.session.add(usage)
+        db.session.commit()
+        
         flash(f'User {username} added and validated successfully', 'success')
     else:
+        db.session.add(new_user)
+        db.session.commit()
         flash(f'User {username} added but validation failed: {message}', 'warning')
     
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('admin'))
 
 @app.route('/users/validate/<int:user_id>')
 def validate_user(user_id):
@@ -100,20 +179,42 @@ def validate_user(user_id):
     
     # Validate with timekpr
     ssh_client = SSHClient(hostname=user.system_ip)
-    is_valid, message = ssh_client.validate_user(user.username)
+    is_valid, message, config_dict = ssh_client.validate_user(user.username)
     
     user.is_valid = is_valid
     user.last_checked = datetime.utcnow()
     
-    # Save to database
-    db.session.commit()
-    
-    if is_valid:
+    if is_valid and config_dict:
+        user.last_config = json.dumps(config_dict)
+        
+        # Update today's usage data
+        today = date.today()
+        time_spent = config_dict.get('TIME_SPENT_DAY', 0)
+        
+        # Look for an existing record for today
+        usage = UserTimeUsage.query.filter_by(
+            user_id=user.id,
+            date=today
+        ).first()
+        
+        if usage:
+            usage.time_spent = time_spent
+        else:
+            # Create a new record
+            usage = UserTimeUsage(
+                user_id=user.id,
+                date=today,
+                time_spent=time_spent
+            )
+            db.session.add(usage)
+        
+        db.session.commit()
         flash(f'User {user.username} validated successfully', 'success')
     else:
+        db.session.commit()
         flash(f'User validation failed: {message}', 'danger')
     
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('admin'))
 
 @app.route('/users/delete/<int:user_id>', methods=['POST'])
 def delete_user(user_id):
@@ -127,11 +228,42 @@ def delete_user(user_id):
     db.session.commit()
     
     flash(f'User {username} removed successfully', 'success')
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('admin'))
 
-# Create tables before first request (for Flask 2.0+)
+@app.route('/api/user/<int:user_id>/usage')
+def get_user_usage(user_id):
+    """API endpoint to get user usage data"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+    
+    user = ManagedUser.query.get_or_404(user_id)
+    days = request.args.get('days', 7, type=int)
+    
+    usage_data = user.get_recent_usage(days=days)
+    
+    # Format for chart.js
+    labels = list(usage_data.keys())
+    values = list(usage_data.values())
+    
+    # Convert seconds to hours for better readability
+    values_hours = [round(v / 3600, 1) for v in values]
+    
+    return jsonify({
+        'success': True,
+        'labels': labels,
+        'values': values_hours,
+        'username': user.username
+    })
+
+# With app context
 with app.app_context():
     db.create_all()
+    print("Database tables verified")
+
+# Only start task manager after ensuring database is configured correctly
+# Comment this out initially to avoid startup issues
+# with app.app_context():
+#     task_manager.start()
 
 if __name__ == '__main__':
     app.run(debug=True)

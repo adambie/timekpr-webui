@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timekpr Admin Panel</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Timekpr Admin Panel</h1>
+            <div class="user-controls">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-dashboard">Dashboard</a>
+                <a href="{{ url_for('start_tasks') }}" class="btn btn-sm btn-task">Start Background Tasks</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
+            </div>
+        </header>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="dashboard-main">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Add New User</h2>
+                </div>
+                <div class="card-body">
+                    <form action="{{ url_for('add_user') }}" method="POST">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="username">Username</label>
+                                <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="system_ip">System IP</label>
+                                <input type="text" id="system_ip" name="system_ip" class="form-control" placeholder="Enter IP address" required>
+                            </div>
+                            <div class="form-group form-button">
+                                <button type="submit" class="btn btn-add">Add User</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>Managed Users</h2>
+                </div>
+                <div class="card-body">
+                    {% if users %}
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>System IP</th>
+                                        <th>Status</th>
+                                        <th>Added On</th>
+                                        <th>Last Checked</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in users %}
+                                        <tr>
+                                            <td>{{ user.username }}</td>
+                                            <td>{{ user.system_ip }}</td>
+                                            <td>
+                                                {% if user.is_valid %}
+                                                    <span class="status status-valid">Valid</span>
+                                                {% else %}
+                                                    <span class="status status-invalid">Invalid</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>{{ user.date_added.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            <td>
+                                                {% if user.last_checked %}
+                                                    {{ user.last_checked.strftime('%Y-%m-%d %H:%M') }}
+                                                {% else %}
+                                                    Never
+                                                {% endif %}
+                                            </td>
+                                            <td class="actions">
+                                                <a href="{{ url_for('validate_user', user_id=user.id) }}" class="btn btn-sm btn-validate">Validate</a>
+                                                <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" class="inline-form">
+                                                    <button type="submit" class="btn btn-sm btn-delete">Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="empty-state">
+                            <p>No users have been added yet.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

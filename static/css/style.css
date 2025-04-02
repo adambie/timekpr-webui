@@ -310,6 +310,130 @@ label {
     color: #7f8c8d;
 }
 
+.full-width {
+    grid-column: 1 / -1;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+}
+
+/* User tiles grid */
+/* User tiles grid */
+.user-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.user-tile {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.user-tile-header {
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eaedf0;
+}
+
+.user-tile-header h2 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 1.5rem;
+}
+
+.user-location {
+    color: #7f8c8d;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.user-tile-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.info-item {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.info-label {
+    font-size: 0.8rem;
+    color: #7f8c8d;
+    margin-bottom: 5px;
+}
+
+.info-value {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.user-tile-chart {
+    flex-grow: 1;
+    position: relative;
+    height: 250px;
+    margin-top: 10px;
+}
+
+.user-tile-chart h3 {
+    font-size: 1rem;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+/* Admin button */
+.btn-admin {
+    background-color: #9b59b6;
+}
+
+.btn-admin:hover {
+    background-color: #8e44ad;
+}
+
+.btn-dashboard {
+    background-color: #2ecc71;
+}
+
+.btn-dashboard:hover {
+    background-color: #27ae60;
+}
+
+.btn-task {
+    background-color: #f39c12;
+}
+
+.btn-task:hover {
+    background-color: #d35400;
+}
+
+@media (max-width: 1200px) {
+    .user-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .user-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .user-tile-info {
+        grid-template-columns: 1fr;
+    }
+}
+
 @media (max-width: 768px) {
     .form-row {
         grid-template-columns: 1fr;
