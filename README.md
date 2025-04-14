@@ -118,9 +118,6 @@ On each computer you want to manage:
 - Limit access to the web interface using a firewall or reverse proxy
 - Set up proper SSH key-based authentication for remote access
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Acknowledgements
 
