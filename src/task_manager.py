@@ -6,8 +6,8 @@ import logging
 import json
 import traceback
 
-from database import db, ManagedUser, UserTimeUsage, Settings
-from ssh_helper import SSHClient
+from src.database import db, ManagedUser, UserTimeUsage, Settings
+from src.ssh_helper import SSHClient
 
 logger = logging.getLogger(__name__)
 

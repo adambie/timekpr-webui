@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 import re
 import json
-from database import Settings
+from src.database import Settings
 
 class SSHClient:
     def __init__(self, hostname, username='timekpr-remote', password=None, port=22):

@@ -4,9 +4,9 @@ from datetime import datetime, date, timedelta
 import json
 import logging
 
-from database import db, ManagedUser, UserTimeUsage, Settings
-from ssh_helper import SSHClient
-from task_manager import BackgroundTaskManager
+from src.database import db, ManagedUser, UserTimeUsage, Settings
+from src.ssh_helper import SSHClient
+from src.task_manager import BackgroundTaskManager
 
 # Configure logging
 logging.basicConfig(
