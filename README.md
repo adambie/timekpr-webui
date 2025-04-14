@@ -111,13 +111,6 @@ On each computer you want to manage:
 4. **Settings**: Manage application settings
    - Change admin password (affects both web login and SSH connections)
 
-## Security Considerations
-
-- Change the default password immediately after installation
-- Consider setting up HTTPS for production use
-- Limit access to the web interface using a firewall or reverse proxy
-- Set up proper SSH key-based authentication for remote access
-
 
 ## Acknowledgements
 
