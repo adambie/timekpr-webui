@@ -8,4 +8,6 @@ htmlcov/
 .env
 dist/
 build/
+instance/
 *.egg-info/
+*.db
