@@ -11,6 +11,8 @@ App is designed to be launched easily from docker container.
 **Important feature (and main reason why I created own app) was to have background task that would try to apply timing changes also to PCs that are currently powered off. As soon as they are started they will be updated with new time limits.**
 
 
+![Timekpr Dashboard](docs/images/dashboard.png)
+
 ## Prerequisites
 - Python 3.6+
 - Flask and SQLAlchemy
