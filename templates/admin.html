@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timekpr Admin Panel</title>
+    <title>TimeKpr webUI Admin Panel</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body class="dashboard-body">
     <div class="dashboard-container">
         <header class="dashboard-header">
-            <h1>Timekpr Admin Panel</h1>
+            <h1>TimeKpr webUI Admin Panel</h1>
             <div class="user-controls">
                 <div class="task-status-container">
                     <span class="task-status">
@@ -20,6 +20,7 @@
                     </a>
                 </div>
                 <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-dashboard">Dashboard</a>
+                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-settings">Settings</a>
                 <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
             </div>
         </header>

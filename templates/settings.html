@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TimeKpr webUI Settings</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>TimeKpr webUI Settings</h1>
+            <div class="user-controls">
+                <div class="task-status-container">
+                    <span class="task-status">
+                        Background Tasks: <span id="task-status-indicator" class="status-unknown">Unknown</span>
+                    </span>
+                    <a href="{{ url_for('restart_tasks') }}" class="btn btn-sm btn-restart" title="Restart Background Tasks">
+                        <span class="restart-icon">↻</span>
+                    </a>
+                </div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-dashboard">Dashboard</a>
+                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
+            </div>
+        </header>
+        
+        <script>
+            // Function to update the task status indicator
+            function updateTaskStatus() {
+                fetch('/api/task-status')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const indicator = document.getElementById('task-status-indicator');
+                            const status = data.status;
+                            
+                            if (status.running && status.thread_alive) {
+                                indicator.className = 'status-active';
+                                indicator.textContent = 'Active';
+                            } else {
+                                indicator.className = 'status-inactive';
+                                indicator.textContent = 'Inactive';
+                            }
+                            
+                            // Set tooltip to show last error if any
+                            if (status.last_error) {
+                                indicator.title = `Last error: ${status.last_error.message} at ${status.last_error.time}`;
+                            } else {
+                                indicator.title = 'Background tasks are running normally';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching task status:', error);
+                        const indicator = document.getElementById('task-status-indicator');
+                        indicator.className = 'status-error';
+                        indicator.textContent = 'Error';
+                    });
+            }
+            
+            // Check status immediately and then every 30 seconds
+            updateTaskStatus();
+            setInterval(updateTaskStatus, 30000);
+        </script>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="dashboard-main">
+            <div class="card">
+                <div class="card-header">
+                    <h2>Change Password</h2>
+                </div>
+                <div class="card-body">
+                    <p class="settings-info">This password is used for both admin login and SSH connections.</p>
+                    <form action="{{ url_for('settings') }}" method="POST">
+                        <div class="form-group">
+                            <label for="current_password">Current Password</label>
+                            <input type="password" id="current_password" name="current_password" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="new_password">New Password</label>
+                            <input type="password" id="new_password" name="new_password" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="confirm_password">Confirm New Password</label>
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary">Change Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

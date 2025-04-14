@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 import json
 import logging
 
-from database import db, ManagedUser, UserTimeUsage
+from database import db, ManagedUser, UserTimeUsage, Settings
 from ssh_helper import SSHClient
 from task_manager import BackgroundTaskManager
 
@@ -26,9 +26,8 @@ db.init_app(app)
 task_manager = BackgroundTaskManager()
 task_manager.init_app(app)
 
-# Hardcoded credentials
+# Admin username remains hardcoded
 ADMIN_USERNAME = 'admin'
-ADMIN_PASSWORD = 'admin'
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -38,7 +37,10 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        # Get the admin password from settings, default to 'admin'
+        admin_password = Settings.get_value('admin_password', 'admin')
+        
+        if username == ADMIN_USERNAME and password == admin_password:
             session['logged_in'] = True
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
@@ -105,6 +107,40 @@ def admin():
     # Get all managed users
     users = ManagedUser.query.all()
     return render_template('admin.html', users=users)
+
+@app.route('/settings', methods=['GET', 'POST'])
+def settings():
+    if not session.get('logged_in'):
+        flash('Please login first', 'warning')
+        return redirect(url_for('login'))
+    
+    # Handle password change
+    if request.method == 'POST':
+        current_password = request.form.get('current_password')
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+        
+        # Get the current admin password
+        admin_password = Settings.get_value('admin_password', 'admin')
+        
+        # Validate inputs
+        if not current_password or not new_password or not confirm_password:
+            flash('All fields are required', 'danger')
+        elif current_password != admin_password:
+            flash('Current password is incorrect', 'danger')
+        elif new_password != confirm_password:
+            flash('New passwords do not match', 'danger')
+        elif len(new_password) < 4:
+            flash('New password must be at least 4 characters long', 'danger')
+        else:
+            # Update the password
+            Settings.set_value('admin_password', new_password)
+            flash('Password updated successfully', 'success')
+            
+            # Redirect to avoid form resubmission
+            return redirect(url_for('settings'))
+    
+    return render_template('settings.html')
 
 @app.route('/api/task-status')
 def get_task_status():
@@ -351,6 +387,12 @@ def modify_time():
 with app.app_context():
     db.create_all()
     print("Database tables verified")
+    
+    # Initialize admin password if it doesn't exist
+    if not Settings.get_value('admin_password', None):
+        Settings.set_value('admin_password', 'admin')
+        print("Admin password initialized")
+    
     # Start background tasks automatically
     task_manager.start()
     print("Background tasks started automatically")

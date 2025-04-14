@@ -6,7 +6,7 @@ import logging
 import json
 import traceback
 
-from database import db, ManagedUser, UserTimeUsage
+from database import db, ManagedUser, UserTimeUsage, Settings
 from ssh_helper import SSHClient
 
 logger = logging.getLogger(__name__)
@@ -115,7 +115,8 @@ class BackgroundTaskManager:
                 try:
                     logger.info("Processing user: %s @ %s", user.username, user.system_ip)
                     
-                    # Connect to the system and get user info
+                    # Connect to the system and get user info - use current password from settings
+                    admin_password = Settings.get_value('admin_password', 'admin')
                     ssh_client = SSHClient(hostname=user.system_ip)
                     
                     # Check if there's a pending time adjustment
@@ -140,7 +141,7 @@ class BackgroundTaskManager:
                     else:
                         logger.info(f"No pending time adjustment for {user.username}")
                     
-# Then update user info
+                    # Then update user info
                     logger.info("Validating user %s", user.username)
                     try:
                         is_valid, result_message, config_dict = ssh_client.validate_user(user.username)

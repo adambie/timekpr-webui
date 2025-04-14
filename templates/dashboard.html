@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Timekpr Dashboard</title>
+    <title>TimeKpr webUI Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 </head>
 <body class="dashboard-body">
     <div class="dashboard-container">
         <header class="dashboard-header">
-            <h1>Timekpr Dashboard</h1>
+            <h1>TimeKpr webUI Dashboard</h1>
             <div class="user-controls">
                 <div class="task-status-container">
                     <span class="task-status">
@@ -20,7 +20,8 @@
                         <span class="restart-icon">↻</span>
                     </a>
                 </div>
-                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin Panel</a>
+                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin</a>
+                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-settings">Settings</a>
                 <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
             </div>
         </header>
