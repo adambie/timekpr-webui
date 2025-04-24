@@ -11,3 +11,4 @@ build/
 instance/
 *.egg-info/
 *.db
+.project

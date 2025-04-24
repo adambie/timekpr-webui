@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create data directory with proper permissions
 RUN mkdir -p /app/data && chmod 777 /app/data
 
+# This is where timekpr-webui will store usage data
+VOLUME /app/data
+
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt

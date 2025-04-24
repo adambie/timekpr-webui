@@ -8,3 +8,6 @@ services:
     volumes:
       - ./data:/app/data
     restart: unless-stopped
+    environment:
+      # if your app needs to run on a subpath, place it here - e.g. /timekpr
+      SCRIPT_NAME: /
