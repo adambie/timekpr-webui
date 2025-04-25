@@ -16,8 +16,13 @@ logging.basicConfig(
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///timekpr.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///timekpr.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['ADMIN_USERNAME'] = os.getenv('ADMIN_USERNAME', 'admin')
+app.config['ADMIN_PASSWORD_DEFAULT'] = os.getenv('ADMIN_PASSWORD_DEFAULT', 'admin')
+app.config['TIMEKPR_USERNAME'] = os.getenv('TIMEKPR_USERNAME', 'timekpr-remote')
+app.config['TIMEKPR_PASSWORD'] = os.getenv('TIMEKPR_PASSWORD')
+app.config['DASHBOARD_DAYS'] = int(os.getenv('DASHBOARD_DAYS', '7'))
 
 # Initialize the database
 db.init_app(app)
@@ -26,8 +31,8 @@ db.init_app(app)
 task_manager = BackgroundTaskManager()
 task_manager.init_app(app)
 
-# Admin username remains hardcoded
-ADMIN_USERNAME = 'admin'
+# Admin username no longerjj hardcoded
+ADMIN_USERNAME = app.config['ADMIN_USERNAME']
 
 @app.route('/', methods=['GET', 'POST'])
 def login():
@@ -38,7 +43,7 @@ def login():
         password = request.form.get('password')
         
         # Get the admin password from settings, default to 'admin'
-        admin_password = Settings.get_value('admin_password', 'admin')
+        admin_password = Settings.get_value('admin_password', app.config['ADMIN_PASSWORD_DEFAULT'])
         
         if username == ADMIN_USERNAME and password == admin_password:
             session['logged_in'] = True
@@ -67,7 +72,7 @@ def dashboard():
     user_data = []
     for user in users:
         # Get usage data for charts
-        usage_data = user.get_recent_usage(days=7)
+        usage_data = user.get_recent_usage(days=app.config['DASHBOARD_DAYS'])
         
         # Get time left today if available
         time_left = user.get_config_value('TIME_LEFT_DAY')
@@ -121,7 +126,7 @@ def settings():
         confirm_password = request.form.get('confirm_password')
         
         # Get the current admin password
-        admin_password = Settings.get_value('admin_password', 'admin')
+        admin_password = Settings.get_value('admin_password', app.config['ADMIN_PASSWORD_DEFAULT'])
         
         # Validate inputs
         if not current_password or not new_password or not confirm_password:
@@ -200,7 +205,7 @@ def add_user():
     new_user = ManagedUser(username=username, system_ip=system_ip)
     
     # Validate with timekpr
-    ssh_client = SSHClient(hostname=system_ip)
+    ssh_client = SSHClient(hostname=system_ip, username=app.config['TIMEKPR_USERNAME'], password=app.config['TIMEKPR_PASSWORD'])
     is_valid, message, config_dict = ssh_client.validate_user(username)
     
     new_user.is_valid = is_valid
@@ -241,7 +246,8 @@ def validate_user(user_id):
     user = ManagedUser.query.get_or_404(user_id)
     
     # Validate with timekpr
-    ssh_client = SSHClient(hostname=user.system_ip)
+    app.logger.debug('validating %s @ %s using %s', user.username, user.system_ip, app.config['TIMEKPR_USERNAME']);
+    ssh_client = SSHClient(hostname=user.system_ip, username=app.config['TIMEKPR_USERNAME'], password=app.config['TIMEKPR_PASSWORD'])
     is_valid, message, config_dict = ssh_client.validate_user(user.username)
     
     user.is_valid = is_valid
@@ -346,7 +352,7 @@ def modify_time():
     user = ManagedUser.query.get_or_404(user_id)
     
     # Create SSH client
-    ssh_client = SSHClient(hostname=user.system_ip)
+    ssh_client = SSHClient(hostname=system_ip, username=app.config['TIMEKPR_USERNAME'], password=app.config['TIMEKPR_PASSWORD'])
     
     # Execute the command
     success, message = ssh_client.modify_time_left(user.username, operation, seconds)
@@ -390,7 +396,7 @@ with app.app_context():
     
     # Initialize admin password if it doesn't exist
     if not Settings.get_value('admin_password', None):
-        Settings.set_value('admin_password', 'admin')
+        Settings.set_value('admin_password', app.config['ADMIN_PASSWORD_DEFAULT'])
         print("Admin password initialized")
     
     # Start background tasks automatically

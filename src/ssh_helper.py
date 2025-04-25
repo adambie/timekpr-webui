@@ -38,6 +38,13 @@ class SSHClient:
             output = stdout.read().decode('utf-8')
             error = stderr.read().decode('utf-8')
             
+            if exit_status == 127:
+                return False, f"timekpra not found on {self.hostname}", None
+                
+            # A german error message - but exit code is zero
+            if f'Zugriff verweigert' in output or f'Zugriff verweigert' in error:
+                return False, f"Insufficient privileges", None
+            
             # Check for the error message indicating user not found
             if f'User "{username}" configuration is not found' in output or f'User "{username}" configuration is not found' in error:
                 return False, f"User '{username}' not found on system", None

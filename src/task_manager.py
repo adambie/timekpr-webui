@@ -105,7 +105,7 @@ class BackgroundTaskManager:
                 time.sleep(1)
     
     def _update_user_data(self):
-        """Update data for all valid users"""
+        """Update data for all users"""
         try:
             # Get all users with SQLAlchemy in a single query
             users = ManagedUser.query.all()
@@ -115,9 +115,8 @@ class BackgroundTaskManager:
                 try:
                     logger.info("Processing user: %s @ %s", user.username, user.system_ip)
                     
-                    # Connect to the system and get user info - use current password from settings
-                    admin_password = Settings.get_value('admin_password', 'admin')
-                    ssh_client = SSHClient(hostname=user.system_ip)
+                    # Connect to the system and get user info
+                    ssh_client = SSHClient(hostname=user.system_ip, username=self.app.config['TIMEKPR_USERNAME'], password=self.app.config['TIMEKPR_PASSWORD'])
                     
                     # Check if there's a pending time adjustment
                     if user.pending_time_adjustment is not None and user.pending_time_operation is not None:
