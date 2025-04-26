@@ -12,12 +12,13 @@ from src.ssh_helper import SSHClient
 logger = logging.getLogger(__name__)
 
 class BackgroundTaskManager:
-    def __init__(self, app=None):
+    def __init__(self, app=None, delay=10):
         self.app = app
         self.running = False
         self.thread = None
         self.last_error = None
         self._task_lock = threading.Lock()  # Add a lock to prevent concurrent executions
+        self.delay = delay
     
     def init_app(self, app):
         self.app = app
@@ -97,8 +98,8 @@ class BackgroundTaskManager:
                 }
             
             # Sleep for 10 seconds before next run
-            logger.info("Task cycle finished, sleeping for 10 seconds")
-            for i in range(10):
+            logger.info(f"Task cycle finished, sleeping for {self.delay} seconds")
+            for i in range(self.delay):
                 if not self.running:
                     logger.info("Task loop stopping during sleep")
                     break
@@ -190,7 +191,7 @@ class BackgroundTaskManager:
                                 user.is_valid = True
                             
                             db.session.commit()
-                            logger.warning(f"Failed to get data for {user.username}, keeping previous valid status")
+                            logger.warning(f"Failed to get data for {user.username}, keeping previous valid status ({result_message})")
                     except Exception as e:
                         # Connection error (e.g., PC is offline)
                         logger.error(f"Connection error for user {user.username}: {str(e)}")

@@ -23,13 +23,13 @@ app.config['ADMIN_PASSWORD_DEFAULT'] = os.getenv('ADMIN_PASSWORD_DEFAULT', 'admi
 app.config['TIMEKPR_USERNAME'] = os.getenv('TIMEKPR_USERNAME', 'timekpr-remote')
 app.config['TIMEKPR_PASSWORD'] = os.getenv('TIMEKPR_PASSWORD')
 app.config['DASHBOARD_DAYS'] = int(os.getenv('DASHBOARD_DAYS', '7'))
+app.config['DELAY'] = int(os.getenv('DELAY', '15'))
 
 # Initialize the database
 db.init_app(app)
 
 # Initialize background task manager
-task_manager = BackgroundTaskManager()
-task_manager.init_app(app)
+task_manager = BackgroundTaskManager(app, delay=app.config['DELAY'])
 
 # Admin username no longerjj hardcoded
 ADMIN_USERNAME = app.config['ADMIN_USERNAME']
@@ -145,7 +145,18 @@ def settings():
             # Redirect to avoid form resubmission
             return redirect(url_for('settings'))
     
-    return render_template('settings.html')
+    return render_template('settings.html', conf = {
+      'SCRIPT_NAME': os.getenv('SCRIPT_NAME'),
+      'SQLALCHEMY_DATABASE_URI': app.config['SQLALCHEMY_DATABASE_URI'],
+      'SQLALCHEMY_TRACK_MODIFICATIONS': app.config['SQLALCHEMY_TRACK_MODIFICATIONS'],
+      'ADMIN_USERNAME': app.config['ADMIN_USERNAME'],
+      'ADMIN_PASSWORD': '**********',
+      'ADMIN_PASSWORD_DEFAULT': '**********',
+      'TIMEKPR_USERNAME': app.config['TIMEKPR_USERNAME'],
+      'TIMEKPR_PASSWORD': '**********',
+      'DASHBOARD_DAYS': app.config['DASHBOARD_DAYS'],
+      'DELAY': app.config['DELAY'],
+	})
 
 @app.route('/api/task-status')
 def get_task_status():

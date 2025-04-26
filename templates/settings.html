@@ -73,12 +73,27 @@
         {% endwith %}
         
         <div class="dashboard-main">
+			<div class="card">
+				<div class="card-header">
+				    <h2>Current Settings</h2>
+				</div>
+				<div class="card-body">
+				    <table width="100%" order="0">
+    				    {% for key, value in conf.items() %}
+							<tr>
+							    <td width="50%">{{key}}</td>
+							    <td width="50%">{{value}}</td>
+							</tr>
+       				    {% endfor %}
+				    </table>
+    			</div>
+			</div>
             <div class="card">
                 <div class="card-header">
                     <h2>Change Password</h2>
                 </div>
                 <div class="card-body">
-                    <p class="settings-info">This password is used for both admin login and SSH connections.</p>
+                    <p class="settings-info">This password is used for webUI login only.</p>
                     <form action="{{ url_for('settings') }}" method="POST">
                         <div class="form-group">
                             <label for="current_password">Current Password</label>
