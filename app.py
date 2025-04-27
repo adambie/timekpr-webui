@@ -16,7 +16,7 @@ logging.basicConfig(
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///timekpr.db')
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI', 'sqlite:///data/timekpr.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['ADMIN_USERNAME'] = os.getenv('ADMIN_USERNAME', 'admin')
 app.config['ADMIN_PASSWORD_DEFAULT'] = os.getenv('ADMIN_PASSWORD_DEFAULT', 'admin')

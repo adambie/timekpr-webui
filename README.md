@@ -20,7 +20,7 @@ App is designed to be launched easily from docker container.
 - Timekpr installed on target computers
 - SSH access to managed computers (using timekpr-remote user)
 
-## Installation
+## Deploy/Run
 
 The easiest way to deploy the application is using Docker and Docker Compose.
 
@@ -63,8 +63,26 @@ If you prefer to run the application without Docker:
 
 3. Start the application:
    ```bash
-   python app.py
+   DELAY=20 python app.py
    ```
+
+4. Access the web interface at `http://localhost:5000`
+
+### With Docker only
+
+1. Start the application from pre-built containers:
+
+   ```bash
+   docker run --name timekpr-webui --port 5000:5000 -e DELAY=20 -e SQLALCHEMY_DATABASE_URI=sqlite:////app/data/timekpr.db ghcr.io/hiranchaudhuri/timekpr-webui:configuration-arm
+   ```
+
+   In case you run on Intel/AMD hardware, use a different tag:
+
+   ```bash
+   docker run --name timekpr-webui --port 5000:5000 -e DELAY=20 -e SQLALCHEMY_DATABASE_URI=sqlite:////app/data/timekpr.db ghcr.io/hiranchaudhuri/timekpr-webui:configuration-x86
+   ```
+
+2. Access the web interface at `http://localhost:5000`
 
 ## Setting Up Remote Access
 
@@ -91,6 +109,21 @@ On each computer you want to manage:
 
 5. Set up SSH access from your central server to this user
 
+## Configuration
+
+The timekpr-webui can be configured via environment variables. Likely you want to deviate from the built-in defaults.
+
+Variable                | Meaning                                                                                         | Default
+----------------------- | ----------------------------------------------------------------------------------------------- | -------------------------
+SQLALCHEMY_DATABASE_URI | Path to database file. Default is in /app/data, which should be mounted to a persistent volume. | sqlite:///data/timekpr.db
+SCRIPT_NAME             | Root of the application, as perceived by the browser.                                           | /
+ADMIN_USERNAME          | Username to login to timekpr-webui.                                                             | admin
+ADMIN_PASSWORD_DEFAULT  | Password to login to timekpr-webui - as long as no new password was configured.                 | admin
+TIMEKPR_USERNAME        | User for ssh connections to the managed machines.                                               | timekpr-remote
+TIMEKPR_PASSWORD        | Password for ssh connections to the managed machines.                                           | None
+DASHBOARD_DAYS          | Amount of days for history reports on the dashboard.                                            | 7
+DELAY                   | Amount of seconds to wait between polling/updating all the users.                               | 15
+
 ## Usage
 
 1. **Login**: Access the web interface and login with the default credentials:
@@ -109,7 +142,8 @@ On each computer you want to manage:
    - View weekly usage patterns
 
 4. **Settings**: Manage application settings
-   - Change admin password (affects both web login and SSH connections)
+   - View environment variable configuration
+   - Change web-ui password
 
 
 ## Acknowledgements
