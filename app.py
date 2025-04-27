@@ -363,7 +363,7 @@ def modify_time():
     user = ManagedUser.query.get_or_404(user_id)
     
     # Create SSH client
-    ssh_client = SSHClient(hostname=system_ip, username=app.config['TIMEKPR_USERNAME'], password=app.config['TIMEKPR_PASSWORD'])
+    ssh_client = SSHClient(hostname=user.system_ip, username=app.config['TIMEKPR_USERNAME'], password=app.config['TIMEKPR_PASSWORD'])
     
     # Execute the command
     success, message = ssh_client.modify_time_left(user.username, operation, seconds)
