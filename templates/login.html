@@ -10,10 +10,15 @@
 <body>
     <div class="container">
         <div class="login-card">
-            <div class="login-header">
-                <h2>Login</h2>
-                <p>TimeKpr-webUI</p>
-            </div>
+			<header class="login-header">
+    			<div>
+					<img src="{{ url_for('static', filename='timekpr-client-128.png') }}"/>
+	    		</div>
+				<div class="login-header">
+				    <h2>Login</h2>
+				    <p>TimeKpr-webUI</p>
+				</div>
+		    </header>
             
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
