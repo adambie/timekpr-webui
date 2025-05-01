@@ -282,7 +282,7 @@
             formData.append('seconds', absoluteSeconds);
             
             // Send request to server
-            fetch('/api/modify-time', {
+            fetch({{ url_for('modify_time') }}, {
                 method: 'POST',
                 body: formData
             })
