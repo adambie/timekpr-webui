@@ -267,8 +267,6 @@
             }
             
             const seconds = timeAdjustment * 60; // Convert minutes to seconds
-            const operation = seconds > 0 ? '+' : '-';
-            const absoluteSeconds = Math.abs(seconds);
             
             // Show loading status
             const statusEl = document.getElementById('modalStatus');
@@ -278,8 +276,7 @@
             // Create form data
             const formData = new FormData();
             formData.append('user_id', currentUserId);
-            formData.append('operation', operation);
-            formData.append('seconds', absoluteSeconds);
+            formData.append('seconds', seconds);
             
             // Send request to server
 			fetch('{{ url_for('modify_time') }}', {

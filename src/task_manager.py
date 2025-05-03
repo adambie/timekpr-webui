@@ -120,13 +120,13 @@ class BackgroundTaskManager:
                     ssh_client = SSHClient(hostname=user.system_ip, username=self.app.config['TIMEKPR_USERNAME'], password=self.app.config['TIMEKPR_PASSWORD'])
                     
                     # Check if there's a pending time adjustment
-                    if user.pending_time_adjustment is not None and user.pending_time_operation is not None:
-                        logger.info(f"Attempting to apply pending time adjustment for {user.username}: {user.pending_time_operation}{user.pending_time_adjustment} seconds")
+                    if user.pending_time_adjustment is not None:
+                        logger.info(f"Attempting to apply pending time adjustment for {user.username}: {user.pending_time_adjustment} seconds")
                         
                         success, message = ssh_client.modify_time_left(
                             user.username, 
-                            user.pending_time_operation, 
-                            user.pending_time_adjustment
+                            '+' if user.pending_time_adjustment>=0 else '-', 
+                            abs(user.pending_time_adjustment)
                         )
                         
                         if success:

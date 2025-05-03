@@ -8,6 +8,9 @@ from src.database import db, ManagedUser, UserTimeUsage, Settings
 from src.ssh_helper import SSHClient
 from src.task_manager import BackgroundTaskManager
 
+def sign(x):
+	return 1 if x >= 0 else -1
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -87,10 +90,10 @@ def dashboard():
         # So the template can format it
         
         # Check for pending time adjustments
-        if user.pending_time_adjustment is not None and user.pending_time_operation is not None:
+        if user.pending_time_adjustment is not None:
             minutes = user.pending_time_adjustment // 60
-            operation = user.pending_time_operation
-            pending_adjustments[str(user.id)] = f"{operation}{minutes} minutes"
+            operation = '+' if minutes >= 0 else '-'
+            pending_adjustments[str(user.id)] = f"{operation}{abs(minutes)} minutes"
         
         user_data.append({
             'id': user.id,
@@ -343,10 +346,11 @@ def modify_time():
     
     # Get parameters from request
     user_id = request.form.get('user_id')
-    operation = request.form.get('operation')
     seconds = request.form.get('seconds')
-    
-    if not user_id or not operation or not seconds:
+
+    app.logger.debug('modify_time %s %s %s', user_id, seconds);
+	    
+    if not user_id or not seconds:
         return jsonify({'success': False, 'message': 'Missing required parameters'}), 400
     
     try:
@@ -355,18 +359,20 @@ def modify_time():
     except ValueError:
         return jsonify({'success': False, 'message': 'Invalid parameter format'}), 400
     
-    # Validate operation
-    if operation not in ['+', '-']:
-        return jsonify({'success': False, 'message': "Operation must be '+' or '-'"}), 400
-    
     # Get user from database
     user = ManagedUser.query.get_or_404(user_id)
+    if user.pending_time_adjustment:
+        seconds += user.pending_time_adjustment
     
     # Create SSH client
     ssh_client = SSHClient(hostname=user.system_ip, username=app.config['TIMEKPR_USERNAME'], password=app.config['TIMEKPR_PASSWORD'])
     
     # Execute the command
-    success, message = ssh_client.modify_time_left(user.username, operation, seconds)
+    success, message = ssh_client.modify_time_left(
+        user.username, 
+        '+' if seconds >= 0 else '-', 
+        abs(seconds)
+    )
     
     if success:
         # Update user info to reflect changes
@@ -376,7 +382,6 @@ def modify_time():
             user.last_config = json.dumps(config_dict)
             # Clear any pending adjustments since we succeeded
             user.pending_time_adjustment = None
-            user.pending_time_operation = None
             db.session.commit()
             
         return jsonify({
@@ -389,12 +394,11 @@ def modify_time():
         # Store as pending adjustment if it failed
         # First clear any existing pending adjustment
         user.pending_time_adjustment = seconds
-        user.pending_time_operation = operation
         db.session.commit()
         
         return jsonify({
             'success': True,  # We report success since we stored it for later
-            'message': f"Computer seems to be offline. Time adjustment of {operation}{seconds} seconds has been queued and will be applied when the computer comes online.",
+            'message': f"Computer seems to be offline. Time adjustment of {sign(seconds)}{abs(seconds)} seconds has been queued and will be applied when the computer comes online.",
             'username': user.username,
             'pending': True,
             'refresh': True

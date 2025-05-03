@@ -38,7 +38,6 @@ class ManagedUser(db.Model):
     last_checked = db.Column(db.DateTime, nullable=True)
     last_config = db.Column(db.Text, nullable=True) # Store the full config JSON
     pending_time_adjustment = db.Column(db.Integer, nullable=True) # Pending time adjustment in seconds
-    pending_time_operation = db.Column(db.String(1), nullable=True) # + or -
     
     # Relationship with usage data
     usage_data = db.relationship('UserTimeUsage', backref='user', lazy=True, cascade="all, delete-orphan")
