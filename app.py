@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 import json
 import logging
 
-from src.database import db, ManagedUser, UserTimeUsage, Settings
+from src.database import db, ManagedUser, UserTimeUsage, Settings, UserWeeklySchedule
 from src.ssh_helper import SSHClient
 from src.task_manager import BackgroundTaskManager
 
@@ -93,7 +93,8 @@ def dashboard():
             'system_ip': user.system_ip,
             'last_checked': user.last_checked,  # Keep as datetime object
             'usage_data': usage_data,
-            'time_left': time_left_formatted
+            'time_left': time_left_formatted,
+            'weekly_schedule': user.weekly_schedule
         })
     
     return render_template('dashboard.html', users=user_data, pending_adjustments=pending_adjustments)
@@ -317,6 +318,111 @@ def get_user_usage(user_id):
         'values': values_hours,
         'username': user.username
     })
+
+@app.route('/weekly-schedule/<int:user_id>')
+def weekly_schedule_user(user_id):
+    """Display weekly schedule management page for a specific user"""
+    if not session.get('logged_in'):
+        flash('Please login first', 'warning')
+        return redirect(url_for('login'))
+    
+    # Get the specific user
+    user = ManagedUser.query.get_or_404(user_id)
+    
+    # Ensure the user has a weekly schedule record
+    if not user.weekly_schedule:
+        schedule = UserWeeklySchedule(user_id=user.id)
+        db.session.add(schedule)
+        db.session.commit()
+    
+    return render_template('weekly_schedule_single.html', user=user)
+
+@app.route('/weekly-schedule/update', methods=['POST'])
+def update_weekly_schedule():
+    """Update weekly schedule for a user"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+    
+    user_id = request.form.get('user_id')
+    
+    if not user_id:
+        flash('User ID is required', 'danger')
+        return redirect(url_for('weekly_schedule'))
+    
+    try:
+        user_id = int(user_id)
+    except ValueError:
+        flash('Invalid user ID', 'danger')
+        return redirect(url_for('weekly_schedule'))
+    
+    user = ManagedUser.query.get_or_404(user_id)
+    
+    # Get schedule data from form
+    schedule_data = {}
+    days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+    
+    for day in days:
+        hours = request.form.get(day, '0')
+        try:
+            hours = float(hours)
+            if hours < 0:
+                hours = 0
+            elif hours > 24:
+                hours = 24
+        except (ValueError, TypeError):
+            hours = 0
+        schedule_data[day] = int(hours)  # Store as integer hours
+    
+    # Get or create weekly schedule
+    if not user.weekly_schedule:
+        schedule = UserWeeklySchedule(user_id=user.id)
+        db.session.add(schedule)
+        db.session.flush()  # Get the ID
+        user.weekly_schedule = schedule
+    else:
+        schedule = user.weekly_schedule
+    
+    # Update the schedule
+    schedule.set_schedule_from_dict(schedule_data)
+    
+    try:
+        db.session.commit()
+        flash(f'Weekly schedule updated for {user.username}', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error updating schedule: {str(e)}', 'danger')
+    
+    return redirect(url_for('weekly_schedule_user', user_id=user.id))
+
+@app.route('/api/schedule-sync-status/<int:user_id>')
+def get_schedule_sync_status(user_id):
+    """Get the sync status of a user's weekly schedule"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+    
+    user = ManagedUser.query.get_or_404(user_id)
+    
+    if user.weekly_schedule:
+        schedule_dict = user.weekly_schedule.get_schedule_dict()
+        last_synced = None
+        if user.weekly_schedule.last_synced:
+            last_synced = user.weekly_schedule.last_synced.strftime('%Y-%m-%d %H:%M')
+        
+        return jsonify({
+            'success': True,
+            'is_synced': user.weekly_schedule.is_synced,
+            'schedule': schedule_dict,
+            'last_synced': last_synced,
+            'last_modified': user.weekly_schedule.last_modified.strftime('%Y-%m-%d %H:%M') if user.weekly_schedule.last_modified else None
+        })
+    else:
+        return jsonify({
+            'success': True,
+            'is_synced': True,  # No schedule means no sync needed
+            'schedule': None,
+            'last_synced': None,
+            'last_modified': None
+        })
 
 @app.route('/api/modify-time', methods=['POST'])
 def modify_time():

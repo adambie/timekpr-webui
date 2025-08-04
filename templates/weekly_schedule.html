@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Schedule - TimeKpr webUI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="dashboard-body">
+    <div class="dashboard-container">
+        <header class="dashboard-header">
+            <h1>Weekly Schedule Management</h1>
+            <div class="user-controls">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-back">← Dashboard</a>
+                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin</a>
+                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-settings">Settings</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
+            </div>
+        </header>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="user-grid">
+            {% if users %}
+                {% for user in users %}
+                    <div class="user-tile schedule-tile">
+                        <div class="user-tile-header">
+                            <h2>{{ user.username }}</h2>
+                            <div class="user-location">{{ user.system_ip }}</div>
+                            {% if user.weekly_schedule and not user.weekly_schedule.is_synced %}
+                                <div class="sync-status unsynced" title="Changes not yet synced to remote system">
+                                    ⚠ Not Synced
+                                </div>
+                            {% elif user.weekly_schedule and user.weekly_schedule.is_synced %}
+                                <div class="sync-status synced" title="Schedule synchronized with remote system">
+                                    ✓ Synced
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="schedule-form">
+                            <form id="schedule-form-{{ user.id }}" method="POST" action="{{ url_for('update_weekly_schedule') }}">
+                                <input type="hidden" name="user_id" value="{{ user.id }}">
+                                
+                                <div class="schedule-header">
+                                    <h3>Weekly Time Limits (hours per day)</h3>
+                                    <div class="current-schedule-summary">
+                                        {% if user.weekly_schedule %}
+                                            {% set schedule = user.weekly_schedule.get_schedule_dict() %}
+                                            <div class="schedule-summary">
+                                                <strong>Current Schedule:</strong>
+                                                <span class="schedule-quick-view">
+                                                    Mon:{{ schedule['monday'] }}h, Tue:{{ schedule['tuesday'] }}h, Wed:{{ schedule['wednesday'] }}h, Thu:{{ schedule['thursday'] }}h, Fri:{{ schedule['friday'] }}h, Sat:{{ schedule['saturday'] }}h, Sun:{{ schedule['sunday'] }}h
+                                                </span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="weekday-controls">
+                                        <label>Set all weekdays (Mon-Fri):</label>
+                                        <input type="number" id="weekday-hours-{{ user.id }}" min="0" max="24" step="0.5" placeholder="Hours">
+                                        <button type="button" class="btn btn-mobile btn-set-weekdays" onclick="setWeekdayHours({{ user.id }})">Apply to Weekdays</button>
+                                    </div>
+                                </div>
+                                
+                                <div class="schedule-grid">
+                                    <div class="schedule-day">
+                                        <label for="monday-{{ user.id }}">Monday:</label>
+                                        <input type="number" 
+                                               id="monday-{{ user.id }}" 
+                                               name="monday" 
+                                               min="0" 
+                                               max="24" 
+                                               step="0.5"
+                                               value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['monday'] }}{% else %}0{% endif %}"
+                                               class="schedule-input">
+                                        <span class="hours-label">hours</span>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <label for="tuesday-{{ user.id }}">Tuesday:</label>
+                                        <input type="number" 
+                                               id="tuesday-{{ user.id }}" 
+                                               name="tuesday" 
+                                               min="0" 
+                                               max="24" 
+                                               step="0.5"
+                                               value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['tuesday'] }}{% else %}0{% endif %}"
+                                               class="schedule-input">
+                                        <span class="hours-label">hours</span>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <label for="wednesday-{{ user.id }}">Wednesday:</label>
+                                        <input type="number" 
+                                               id="wednesday-{{ user.id }}" 
+                                               name="wednesday" 
+                                               min="0" 
+                                               max="24" 
+                                               step="0.5"
+                                               value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['wednesday'] }}{% else %}0{% endif %}"
+                                               class="schedule-input">
+                                        <span class="hours-label">hours</span>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <label for="thursday-{{ user.id }}">Thursday:</label>
+                                        <input type="number" 
+                                               id="thursday-{{ user.id }}" 
+                                               name="thursday" 
+                                               min="0" 
+                                               max="24" 
+                                               step="0.5"
+                                               value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['thursday'] }}{% else %}0{% endif %}"
+                                               class="schedule-input">
+                                        <span class="hours-label">hours</span>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <label for="friday-{{ user.id }}">Friday:</label>
+                                        <input type="number" 
+                                               id="friday-{{ user.id }}" 
+                                               name="friday" 
+                                               min="0" 
+                                               max="24" 
+                                               step="0.5"
+                                               value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['friday'] }}{% else %}0{% endif %}"
+                                               class="schedule-input">
+                                        <span class="hours-label">hours</span>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <label for="saturday-{{ user.id }}">Saturday:</label>
+                                        <input type="number" 
+                                               id="saturday-{{ user.id }}" 
+                                               name="saturday" 
+                                               min="0" 
+                                               max="24" 
+                                               step="0.5"
+                                               value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['saturday'] }}{% else %}0{% endif %}"
+                                               class="schedule-input">
+                                        <span class="hours-label">hours</span>
+                                    </div>
+                                    
+                                    <div class="schedule-day">
+                                        <label for="sunday-{{ user.id }}">Sunday:</label>
+                                        <input type="number" 
+                                               id="sunday-{{ user.id }}" 
+                                               name="sunday" 
+                                               min="0" 
+                                               max="24" 
+                                               step="0.5"
+                                               value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['sunday'] }}{% else %}0{% endif %}"
+                                               class="schedule-input">
+                                        <span class="hours-label">hours</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="schedule-actions">
+                                    <button type="submit" class="btn btn-confirm">Save Schedule</button>
+                                    <button type="button" class="btn btn-cancel" onclick="resetScheduleForm({{ user.id }})">Reset</button>
+                                </div>
+                                
+                                {% if user.weekly_schedule %}
+                                    <div class="schedule-info">
+                                        <div class="info-item">
+                                            <span class="info-label">Last Modified:</span>
+                                            <span class="info-value">
+                                                {% if user.weekly_schedule.last_modified %}
+                                                    {{ user.weekly_schedule.last_modified.strftime('%Y-%m-%d %H:%M') }}
+                                                {% else %}
+                                                    Never
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                        {% if user.weekly_schedule.last_synced %}
+                                            <div class="info-item">
+                                                <span class="info-label">Last Synced:</span>
+                                                <span class="info-value">
+                                                    {{ user.weekly_schedule.last_synced.strftime('%Y-%m-%d %H:%M') }}
+                                                </span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state full-width">
+                    <h2>No Users Available</h2>
+                    <p>No valid users have been added yet. Go to the Admin Panel to add and manage users.</p>
+                    <a href="{{ url_for('admin') }}" class="btn btn-admin">Go to Admin Panel</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script>
+        function setWeekdayHours(userId) {
+            const weekdayHours = document.getElementById(`weekday-hours-${userId}`).value;
+            if (!weekdayHours) {
+                alert('Please enter hours for weekdays');
+                return;
+            }
+            
+            // Set Monday through Friday
+            const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+            weekdays.forEach(day => {
+                document.getElementById(`${day}-${userId}`).value = weekdayHours;
+            });
+        }
+        
+        function resetScheduleForm(userId) {
+            if (confirm('Are you sure you want to reset the schedule to the last saved values?')) {
+                // Reload the page to restore original values
+                window.location.reload();
+            }
+        }
+        
+        // Add form change detection to show unsaved changes warning
+        document.addEventListener('DOMContentLoaded', function() {
+            const forms = document.querySelectorAll('[id^="schedule-form-"]');
+            
+            forms.forEach(form => {
+                const inputs = form.querySelectorAll('input[type="number"]');
+                let originalValues = {};
+                
+                // Store original values
+                inputs.forEach(input => {
+                    originalValues[input.name] = input.value;
+                });
+                
+                // Track changes
+                inputs.forEach(input => {
+                    input.addEventListener('change', function() {
+                        let hasChanges = false;
+                        inputs.forEach(inp => {
+                            if (inp.value !== originalValues[inp.name]) {
+                                hasChanges = true;
+                            }
+                        });
+                        
+                        // Update form appearance based on changes
+                        if (hasChanges) {
+                            form.classList.add('has-changes');
+                        } else {
+                            form.classList.remove('has-changes');
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

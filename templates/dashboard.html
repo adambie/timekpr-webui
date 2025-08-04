@@ -104,8 +104,19 @@
                                 </div>
                             </div>
                             {% endif %}
+                            {% if user.weekly_schedule and not user.weekly_schedule.is_synced %}
+                            <div class="info-item pending-item">
+                                <div class="info-label">Weekly Schedule:</div>
+                                <div class="info-value pending-value">
+                                    ⚠ Not Synced
+                                </div>
+                            </div>
+                            {% endif %}
                             <div class="info-item action-item">
-                                <button class="btn btn-adjust-time" onclick="openTimeAdjustModal({{ user.id }}, '{{ user.username }}')">Adjust Time</button>
+                                <div class="action-buttons">
+                                    <button class="btn btn-adjust-time" onclick="openTimeAdjustModal({{ user.id }}, '{{ user.username }}')">Adjust Time</button>
+                                    <a href="{{ url_for('weekly_schedule_user', user_id=user.id) }}" class="btn btn-schedule">Weekly Schedule</a>
+                                </div>
                             </div>
                         </div>
                         <div class="user-tile-chart">
@@ -118,12 +129,28 @@
                         (function() {
                             const ctx = document.getElementById('chart-{{ user.id }}').getContext('2d');
                             
-                            // Prepare data
+                            // Function to get weekday name from date string
+                            function getWeekdayName(dateStr) {
+                                const date = new Date(dateStr + 'T00:00:00');
+                                const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                                return weekdays[date.getDay()];
+                            }
+                            
+                            // Function to get short weekday name
+                            function getShortWeekdayName(dateStr) {
+                                const date = new Date(dateStr + 'T00:00:00');
+                                const shortWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                                return shortWeekdays[date.getDay()];
+                            }
+                            
+                            // Prepare data with weekday labels
+                            const dates = [];
                             const labels = [];
                             const values = [];
                             
                             {% for date, time_spent in user.usage_data.items() %}
-                                labels.push('{{ date }}');
+                                dates.push('{{ date }}');
+                                labels.push(getShortWeekdayName('{{ date }}'));
                                 values.push({{ time_spent / 3600 }});  // Convert seconds to hours
                             {% endfor %}
                             
@@ -134,33 +161,107 @@
                                     datasets: [{
                                         label: 'Hours Used',
                                         data: values,
-                                        backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                                        borderColor: 'rgba(54, 162, 235, 1)',
-                                        borderWidth: 1
+                                        backgroundColor: function(context) {
+                                            const index = context.dataIndex;
+                                            const weekday = labels[index];
+                                            // Highlight weekends with different color
+                                            if (weekday === 'Sat' || weekday === 'Sun') {
+                                                return 'rgba(255, 193, 7, 0.6)'; // Orange for weekends
+                                            }
+                                            return 'rgba(54, 162, 235, 0.6)'; // Blue for weekdays
+                                        },
+                                        borderColor: function(context) {
+                                            const index = context.dataIndex;
+                                            const weekday = labels[index];
+                                            if (weekday === 'Sat' || weekday === 'Sun') {
+                                                return 'rgba(255, 193, 7, 1)';
+                                            }
+                                            return 'rgba(54, 162, 235, 1)';
+                                        },
+                                        borderWidth: 2,
+                                        borderRadius: 4,
+                                        borderSkipped: false
                                     }]
                                 },
                                 options: {
+                                    responsive: true,
                                     scales: {
                                         y: {
                                             beginAtZero: true,
                                             title: {
                                                 display: true,
-                                                text: 'Hours'
+                                                text: 'Hours Used',
+                                                font: {
+                                                    size: 12,
+                                                    weight: 'bold'
+                                                }
+                                            },
+                                            grid: {
+                                                color: 'rgba(0, 0, 0, 0.1)',
+                                            },
+                                            ticks: {
+                                                font: {
+                                                    size: 11
+                                                }
                                             }
                                         },
                                         x: {
                                             title: {
                                                 display: true,
-                                                text: 'Date'
+                                                text: 'Day of Week',
+                                                font: {
+                                                    size: 12,
+                                                    weight: 'bold'
+                                                }
+                                            },
+                                            grid: {
+                                                display: false
+                                            },
+                                            ticks: {
+                                                font: {
+                                                    size: 12,
+                                                    weight: 'bold'
+                                                },
+                                                color: function(context) {
+                                                    const weekday = labels[context.index];
+                                                    if (weekday === 'Sat' || weekday === 'Sun') {
+                                                        return '#ff6b35'; // Orange text for weekends
+                                                    }
+                                                    return '#495057'; // Dark text for weekdays
+                                                }
                                             }
                                         }
                                     },
                                     plugins: {
                                         legend: {
                                             display: false
+                                        },
+                                        tooltip: {
+                                            callbacks: {
+                                                title: function(context) {
+                                                    const index = context[0].dataIndex;
+                                                    const fullWeekday = getWeekdayName(dates[index]);
+                                                    return fullWeekday + ' (' + dates[index] + ')';
+                                                },
+                                                label: function(context) {
+                                                    const hours = context.parsed.y;
+                                                    const minutes = Math.round((hours % 1) * 60);
+                                                    const wholeHours = Math.floor(hours);
+                                                    
+                                                    if (minutes === 0) {
+                                                        return `${wholeHours}h 0m`;
+                                                    } else {
+                                                        return `${wholeHours}h ${minutes}m`;
+                                                    }
+                                                }
+                                            }
                                         }
                                     },
-                                    maintainAspectRatio: false
+                                    maintainAspectRatio: false,
+                                    interaction: {
+                                        intersect: false,
+                                        mode: 'index'
+                                    }
                                 }
                             });
                         })();

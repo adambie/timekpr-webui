@@ -6,7 +6,7 @@ import logging
 import json
 import traceback
 
-from src.database import db, ManagedUser, UserTimeUsage, Settings
+from src.database import db, ManagedUser, UserTimeUsage, Settings, UserWeeklySchedule
 from src.ssh_helper import SSHClient
 
 logger = logging.getLogger(__name__)
@@ -140,6 +140,26 @@ class BackgroundTaskManager:
                             logger.warning(f"Failed to apply pending time adjustment for {user.username}: {message}")
                     else:
                         logger.info(f"No pending time adjustment for {user.username}")
+                    
+                    # Check if there's a pending weekly schedule sync
+                    if user.weekly_schedule and not user.weekly_schedule.is_synced:
+                        logger.info(f"Attempting to sync weekly schedule for {user.username}")
+                        
+                        schedule_dict = user.weekly_schedule.get_schedule_dict()
+                        success, message = ssh_client.set_weekly_time_limits(user.username, schedule_dict)
+                        
+                        if success:
+                            logger.info(f"Successfully synced weekly schedule for {user.username}")
+                            user.weekly_schedule.mark_synced()
+                            db.session.commit()
+                            logger.info("Marked weekly schedule as synced in database")
+                        else:
+                            logger.warning(f"Failed to sync weekly schedule for {user.username}: {message}")
+                    else:
+                        if user.weekly_schedule:
+                            logger.info(f"Weekly schedule already synced for {user.username}")
+                        else:
+                            logger.info(f"No weekly schedule configured for {user.username}")
                     
                     # Then update user info
                     logger.info("Validating user %s", user.username)
