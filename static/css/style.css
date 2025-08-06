@@ -1104,3 +1104,197 @@ label {
         padding: 20px;
     }
 }
+
+/* Enhanced Schedule Overview Styles */
+.schedule-summary h4 {
+    color: #2c3e50;
+    margin-bottom: 15px;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.schedule-overview {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    border: 1px solid #dee2e6;
+}
+
+.schedule-week-row {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.schedule-weekdays, .schedule-weekends {
+    flex: 1;
+}
+
+.schedule-weekdays h5, .schedule-weekends h5 {
+    color: #495057;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.day-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.day-badge {
+    background-color: #e3f2fd;
+    color: #1565c0;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid #bbdefb;
+}
+
+.day-badge.weekend {
+    background-color: #fff3e0;
+    color: #f57c00;
+    border-color: #ffcc02;
+}
+
+.schedule-totals {
+    text-align: center;
+    padding-top: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+.total-badge {
+    background-color: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.total-badge strong {
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.total-badge small {
+    display: block;
+    color: #6c757d;
+    margin-top: 5px;
+    font-size: 0.8rem;
+}
+
+/* Bulk Controls Styling */
+.bulk-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.bulk-controls label {
+    font-size: 1rem;
+    color: #1565c0;
+    font-weight: 500;
+    text-align: center;
+}
+
+.bulk-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-set-all {
+    background-color: #ff9800;
+    color: white;
+}
+
+.btn-set-all:hover {
+    background-color: #f57c00;
+}
+
+/* Time Input Group with +/- buttons */
+.time-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-time-adjust {
+    width: 40px;
+    height: 40px;
+    border: 2px solid #007bff;
+    background-color: #007bff;
+    color: white;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-time-adjust:hover {
+    background-color: #0056b3;
+    border-color: #0056b3;
+    transform: scale(1.05);
+}
+
+.btn-time-adjust:active {
+    transform: scale(0.95);
+}
+
+.btn-minus {
+    background-color: #dc3545;
+    border-color: #dc3545;
+}
+
+.btn-minus:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+
+.btn-plus {
+    background-color: #28a745;
+    border-color: #28a745;
+}
+
+.btn-plus:hover {
+    background-color: #218838;
+    border-color: #218838;
+}
+
+.schedule-input {
+    text-align: center;
+    min-width: 80px;
+}
+
+/* Mobile responsive for new elements */
+@media (max-width: 768px) {
+    .schedule-week-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .day-badges {
+        justify-content: center;
+    }
+    
+    .bulk-buttons {
+        flex-direction: column;
+    }
+    
+    .btn-time-adjust {
+        width: 50px;
+        height: 50px;
+        font-size: 1.4rem;
+    }
+    
+    .time-input-group {
+        gap: 12px;
+    }
+}

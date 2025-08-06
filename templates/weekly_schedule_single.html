@@ -59,109 +59,173 @@
                             {% if user.weekly_schedule %}
                                 {% set schedule = user.weekly_schedule.get_schedule_dict() %}
                                 <div class="schedule-summary">
-                                    <strong>Current Schedule:</strong>
-                                    <div class="schedule-quick-view">
-                                        Mon: {{ schedule['monday'] }}h, Tue: {{ schedule['tuesday'] }}h, Wed: {{ schedule['wednesday'] }}h, Thu: {{ schedule['thursday'] }}h, Fri: {{ schedule['friday'] }}h, Sat: {{ schedule['saturday'] }}h, Sun: {{ schedule['sunday'] }}h
+                                    <h4>Current Schedule</h4>
+                                    <div class="schedule-overview">
+                                        <div class="schedule-week-row">
+                                            <div class="schedule-weekdays">
+                                                <h5>Weekdays</h5>
+                                                <div class="day-badges">
+                                                    <span class="day-badge">Mon: {{ schedule['monday'] }}h</span>
+                                                    <span class="day-badge">Tue: {{ schedule['tuesday'] }}h</span>
+                                                    <span class="day-badge">Wed: {{ schedule['wednesday'] }}h</span>
+                                                    <span class="day-badge">Thu: {{ schedule['thursday'] }}h</span>
+                                                    <span class="day-badge">Fri: {{ schedule['friday'] }}h</span>
+                                                </div>
+                                            </div>
+                                            <div class="schedule-weekends">
+                                                <h5>Weekends</h5>
+                                                <div class="day-badges">
+                                                    <span class="day-badge weekend">Sat: {{ schedule['saturday'] }}h</span>
+                                                    <span class="day-badge weekend">Sun: {{ schedule['sunday'] }}h</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="schedule-totals">
+                                            {% set total_week = schedule['monday'] + schedule['tuesday'] + schedule['wednesday'] + schedule['thursday'] + schedule['friday'] %}
+                                            {% set total_weekend = schedule['saturday'] + schedule['sunday'] %}
+                                            {% set total_all = total_week + total_weekend %}
+                                            <div class="total-badge">
+                                                <strong>Total: {{ total_all }}h/week</strong>
+                                                <small>({{ total_week }}h weekdays + {{ total_weekend }}h weekend)</small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             {% endif %}
                         </div>
                         <div class="weekday-controls">
-                            <label>Set all weekdays (Mon-Fri):</label>
-                            <input type="number" id="weekday-hours" min="0" max="24" step="0.5" placeholder="Hours">
-                            <button type="button" class="btn btn-mobile btn-set-weekdays" onclick="setWeekdayHours()">Apply to Weekdays</button>
+                            <div class="bulk-controls">
+                                <label>Quick Set Hours:</label>
+                                <div class="time-input-group">
+                                    <button type="button" class="btn-time-adjust btn-minus" onclick="adjustBulkTime(-0.25)">−</button>
+                                    <input type="number" id="bulk-hours" min="0" max="24" step="0.25" placeholder="Hours" class="schedule-input">
+                                    <button type="button" class="btn-time-adjust btn-plus" onclick="adjustBulkTime(0.25)">+</button>
+                                </div>
+                                <div class="bulk-buttons">
+                                    <button type="button" class="btn btn-mobile btn-set-weekdays" onclick="setWeekdayHours()">Apply to Weekdays</button>
+                                    <button type="button" class="btn btn-mobile btn-set-all" onclick="setAllDaysHours()">Apply to All Days</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
                     <div class="schedule-grid">
                         <div class="schedule-day">
                             <label for="monday">Monday:</label>
-                            <input type="number" 
-                                   id="monday" 
-                                   name="monday" 
-                                   min="0" 
-                                   max="24" 
-                                   step="0.5"
-                                   value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['monday'] }}{% else %}0{% endif %}"
-                                   class="schedule-input">
+                            <div class="time-input-group">
+                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('monday', -0.25)">−</button>
+                                <input type="number" 
+                                       id="monday" 
+                                       name="monday" 
+                                       min="0" 
+                                       max="24" 
+                                       step="0.25"
+                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['monday'] }}{% else %}0{% endif %}"
+                                       class="schedule-input">
+                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('monday', 0.25)">+</button>
+                            </div>
                             <span class="hours-label">hours</span>
                         </div>
                         
                         <div class="schedule-day">
                             <label for="tuesday">Tuesday:</label>
-                            <input type="number" 
-                                   id="tuesday" 
-                                   name="tuesday" 
-                                   min="0" 
-                                   max="24" 
-                                   step="0.5"
-                                   value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['tuesday'] }}{% else %}0{% endif %}"
-                                   class="schedule-input">
+                            <div class="time-input-group">
+                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('tuesday', -0.25)">−</button>
+                                <input type="number" 
+                                       id="tuesday" 
+                                       name="tuesday" 
+                                       min="0" 
+                                       max="24" 
+                                       step="0.25"
+                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['tuesday'] }}{% else %}0{% endif %}"
+                                       class="schedule-input">
+                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('tuesday', 0.25)">+</button>
+                            </div>
                             <span class="hours-label">hours</span>
                         </div>
                         
                         <div class="schedule-day">
                             <label for="wednesday">Wednesday:</label>
-                            <input type="number" 
-                                   id="wednesday" 
-                                   name="wednesday" 
-                                   min="0" 
-                                   max="24" 
-                                   step="0.5"
-                                   value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['wednesday'] }}{% else %}0{% endif %}"
-                                   class="schedule-input">
+                            <div class="time-input-group">
+                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('wednesday', -0.25)">−</button>
+                                <input type="number" 
+                                       id="wednesday" 
+                                       name="wednesday" 
+                                       min="0" 
+                                       max="24" 
+                                       step="0.25"
+                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['wednesday'] }}{% else %}0{% endif %}"
+                                       class="schedule-input">
+                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('wednesday', 0.25)">+</button>
+                            </div>
                             <span class="hours-label">hours</span>
                         </div>
                         
                         <div class="schedule-day">
                             <label for="thursday">Thursday:</label>
-                            <input type="number" 
-                                   id="thursday" 
-                                   name="thursday" 
-                                   min="0" 
-                                   max="24" 
-                                   step="0.5"
-                                   value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['thursday'] }}{% else %}0{% endif %}"
-                                   class="schedule-input">
+                            <div class="time-input-group">
+                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('thursday', -0.25)">−</button>
+                                <input type="number" 
+                                       id="thursday" 
+                                       name="thursday" 
+                                       min="0" 
+                                       max="24" 
+                                       step="0.25"
+                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['thursday'] }}{% else %}0{% endif %}"
+                                       class="schedule-input">
+                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('thursday', 0.25)">+</button>
+                            </div>
                             <span class="hours-label">hours</span>
                         </div>
                         
                         <div class="schedule-day">
                             <label for="friday">Friday:</label>
-                            <input type="number" 
-                                   id="friday" 
-                                   name="friday" 
-                                   min="0" 
-                                   max="24" 
-                                   step="0.5"
-                                   value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['friday'] }}{% else %}0{% endif %}"
-                                   class="schedule-input">
+                            <div class="time-input-group">
+                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('friday', -0.25)">−</button>
+                                <input type="number" 
+                                       id="friday" 
+                                       name="friday" 
+                                       min="0" 
+                                       max="24" 
+                                       step="0.25"
+                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['friday'] }}{% else %}0{% endif %}"
+                                       class="schedule-input">
+                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('friday', 0.25)">+</button>
+                            </div>
                             <span class="hours-label">hours</span>
                         </div>
                         
                         <div class="schedule-day">
                             <label for="saturday">Saturday:</label>
-                            <input type="number" 
-                                   id="saturday" 
-                                   name="saturday" 
-                                   min="0" 
-                                   max="24" 
-                                   step="0.5"
-                                   value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['saturday'] }}{% else %}0{% endif %}"
-                                   class="schedule-input">
+                            <div class="time-input-group">
+                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('saturday', -0.25)">−</button>
+                                <input type="number" 
+                                       id="saturday" 
+                                       name="saturday" 
+                                       min="0" 
+                                       max="24" 
+                                       step="0.25"
+                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['saturday'] }}{% else %}0{% endif %}"
+                                       class="schedule-input">
+                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('saturday', 0.25)">+</button>
+                            </div>
                             <span class="hours-label">hours</span>
                         </div>
                         
                         <div class="schedule-day">
                             <label for="sunday">Sunday:</label>
-                            <input type="number" 
-                                   id="sunday" 
-                                   name="sunday" 
-                                   min="0" 
-                                   max="24" 
-                                   step="0.5"
-                                   value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['sunday'] }}{% else %}0{% endif %}"
-                                   class="schedule-input">
+                            <div class="time-input-group">
+                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('sunday', -0.25)">−</button>
+                                <input type="number" 
+                                       id="sunday" 
+                                       name="sunday" 
+                                       min="0" 
+                                       max="24" 
+                                       step="0.25"
+                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['sunday'] }}{% else %}0{% endif %}"
+                                       class="schedule-input">
+                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('sunday', 0.25)">+</button>
+                            </div>
                             <span class="hours-label">hours</span>
                         </div>
                     </div>
@@ -200,8 +264,8 @@
     
     <script>
         function setWeekdayHours() {
-            const weekdayHours = document.getElementById('weekday-hours').value;
-            if (!weekdayHours) {
+            const bulkHours = document.getElementById('bulk-hours').value;
+            if (!bulkHours) {
                 alert('Please enter hours for weekdays');
                 return;
             }
@@ -209,8 +273,46 @@
             // Set Monday through Friday
             const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
             weekdays.forEach(day => {
-                document.getElementById(day).value = weekdayHours;
+                document.getElementById(day).value = bulkHours;
             });
+        }
+        
+        function setAllDaysHours() {
+            const bulkHours = document.getElementById('bulk-hours').value;
+            if (!bulkHours) {
+                alert('Please enter hours for all days');
+                return;
+            }
+            
+            // Set all days
+            const allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+            allDays.forEach(day => {
+                document.getElementById(day).value = bulkHours;
+            });
+        }
+        
+        function adjustDayTime(dayId, adjustment) {
+            const input = document.getElementById(dayId);
+            let currentValue = parseFloat(input.value) || 0;
+            let newValue = currentValue + adjustment;
+            
+            // Ensure within bounds
+            if (newValue < 0) newValue = 0;
+            if (newValue > 24) newValue = 24;
+            
+            input.value = newValue;
+        }
+        
+        function adjustBulkTime(adjustment) {
+            const input = document.getElementById('bulk-hours');
+            let currentValue = parseFloat(input.value) || 0;
+            let newValue = currentValue + adjustment;
+            
+            // Ensure within bounds
+            if (newValue < 0) newValue = 0;
+            if (newValue > 24) newValue = 24;
+            
+            input.value = newValue;
         }
         
         function resetScheduleForm() {
