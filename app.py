@@ -371,7 +371,7 @@ def update_weekly_schedule():
                 hours = 24
         except (ValueError, TypeError):
             hours = 0
-        schedule_data[day] = int(hours)  # Store as integer hours
+        schedule_data[day] = hours  # Store as float hours to support fractional hours
     
     # Get or create weekly schedule
     if not user.weekly_schedule:

@@ -100,14 +100,14 @@ class UserWeeklySchedule(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('managed_user.id'), nullable=False)
     
-    # Time limits per day in seconds (0 = no limit/disabled)
-    monday_hours = db.Column(db.Integer, default=0)
-    tuesday_hours = db.Column(db.Integer, default=0)
-    wednesday_hours = db.Column(db.Integer, default=0)
-    thursday_hours = db.Column(db.Integer, default=0)
-    friday_hours = db.Column(db.Integer, default=0)
-    saturday_hours = db.Column(db.Integer, default=0)
-    sunday_hours = db.Column(db.Integer, default=0)
+    # Time limits per day in hours (0 = no limit/disabled)
+    monday_hours = db.Column(db.Float, default=0)
+    tuesday_hours = db.Column(db.Float, default=0)
+    wednesday_hours = db.Column(db.Float, default=0)
+    thursday_hours = db.Column(db.Float, default=0)
+    friday_hours = db.Column(db.Float, default=0)
+    saturday_hours = db.Column(db.Float, default=0)
+    sunday_hours = db.Column(db.Float, default=0)
     
     # Sync status and timestamps
     is_synced = db.Column(db.Boolean, default=False)

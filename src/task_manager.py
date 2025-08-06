@@ -146,6 +146,7 @@ class BackgroundTaskManager:
                         logger.info(f"Attempting to sync weekly schedule for {user.username}")
                         
                         schedule_dict = user.weekly_schedule.get_schedule_dict()
+                        logger.info(f"DEBUG - schedule_dict from database: {schedule_dict}")
                         success, message = ssh_client.set_weekly_time_limits(user.username, schedule_dict)
                         
                         if success:

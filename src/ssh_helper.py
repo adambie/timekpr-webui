@@ -177,6 +177,7 @@ class SSHClient:
             
             # Set allowed days
             allowed_days_string = ';'.join(allowed_days)
+            # Try without sudo first, then with sudo if needed
             days_command = f'timekpra --setalloweddays {username} \'{allowed_days_string}\''
             logger.info(f"Setting allowed days: {days_command}")
             
@@ -188,18 +189,31 @@ class SSHClient:
             logger.info(f"Set allowed days - exit status: {exit_status}, output: {output}, error: {error}")
             
             if exit_status != 0:
-                return False, f"Failed to set allowed days: {error if error else output}"
+                logger.info("Trying with sudo...")
+                days_command = f'sudo timekpra --setalloweddays {username} \'{allowed_days_string}\''
+                logger.info(f"Setting allowed days with sudo: {days_command}")
+                
+                stdin, stdout, stderr = client.exec_command(days_command)
+                exit_status = stdout.channel.recv_exit_status()
+                output = stdout.read().decode('utf-8')
+                error = stderr.read().decode('utf-8')
+                
+                logger.info(f"Set allowed days with sudo - exit status: {exit_status}, output: {output}, error: {error}")
+                
+                if exit_status != 0:
+                    return False, f"Failed to set allowed days (tried with and without sudo): {error if error else output}"
             
             # Step 2: Set time limits for the allowed days only
             time_limits = []
             for i, day in enumerate(day_order):
                 hours = schedule_dict.get(day, 0)
                 if hours > 0:  # Only include days with limits
-                    seconds = hours * 3600
+                    seconds = int(hours * 3600)  # Convert to integer seconds
                     time_limits.append(str(seconds))
             
             if time_limits:
                 time_limit_string = ';'.join(time_limits)
+                # Try without sudo first, then with sudo if needed  
                 limits_command = f'timekpra --settimelimits {username} \'{time_limit_string}\''
                 logger.info(f"Setting time limits: {limits_command}")
                 
@@ -209,9 +223,24 @@ class SSHClient:
                 error = stderr.read().decode('utf-8')
                 
                 logger.info(f"Set time limits - exit status: {exit_status}, output: {output}, error: {error}")
+                logger.info(f"DEBUG - schedule_dict received: {schedule_dict}")
+                logger.info(f"DEBUG - time_limits calculated: {time_limits}")
+                logger.info(f"DEBUG - allowed_days: {allowed_days}")
                 
                 if exit_status != 0:
-                    return False, f"Failed to set time limits: {error if error else output}"
+                    logger.info("Trying time limits with sudo...")
+                    limits_command = f'sudo timekpra --settimelimits {username} \'{time_limit_string}\''
+                    logger.info(f"Setting time limits with sudo: {limits_command}")
+                    
+                    stdin, stdout, stderr = client.exec_command(limits_command)
+                    exit_status = stdout.channel.recv_exit_status()
+                    output = stdout.read().decode('utf-8')
+                    error = stderr.read().decode('utf-8')
+                    
+                    logger.info(f"Set time limits with sudo - exit status: {exit_status}, output: {output}, error: {error}")
+                    
+                    if exit_status != 0:
+                        return False, f"Failed to set time limits (tried with and without sudo): {error if error else output}"
             
             return True, f"Successfully configured daily time limits for {username}. Days: {allowed_days_string}, Limits: {time_limits}"
             
