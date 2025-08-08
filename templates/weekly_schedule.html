@@ -5,72 +5,108 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Schedule - TimeKpr webUI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </head>
-<body class="dashboard-body">
+<body>
     <div class="dashboard-container">
         <header class="dashboard-header">
-            <h1>Weekly Schedule Management</h1>
-            <div class="user-controls">
-                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-back">← Dashboard</a>
-                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin</a>
-                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-settings">Settings</a>
-                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
+            <div class="dashboard-title">
+                <h1>Weekly Schedule Management</h1>
+                <p class="dashboard-subtitle">Set time limits for all users at once</p>
+            </div>
+            <div class="dashboard-controls">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-secondary">Admin</a>
+                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-secondary">Settings</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger">Logout</a>
             </div>
         </header>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    <div class="alert alert-{{ category }}">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            {% if category == 'success' %}
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                            {% elif category == 'danger' or category == 'error' %}
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                            {% elif category == 'warning' %}
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            {% else %}
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                            {% endif %}
+                        </svg>
+                        {{ message }}
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
         
-        <div class="user-grid">
+        <div class="users-grid">
             {% if users %}
                 {% for user in users %}
-                    <div class="user-tile schedule-tile">
-                        <div class="user-tile-header">
-                            <h2>{{ user.username }}</h2>
-                            <div class="user-location">{{ user.system_ip }}</div>
-                            {% if user.weekly_schedule and not user.weekly_schedule.is_synced %}
-                                <div class="sync-status unsynced" title="Changes not yet synced to remote system">
-                                    ⚠ Not Synced
-                                </div>
-                            {% elif user.weekly_schedule and user.weekly_schedule.is_synced %}
-                                <div class="sync-status synced" title="Schedule synchronized with remote system">
-                                    ✓ Synced
-                                </div>
-                            {% endif %}
+                    <div class="user-card">
+                        <div class="user-card-header">
+                            <div class="user-info">
+                                <h2 class="user-name">{{ user.username }}</h2>
+                                <p class="user-location">{{ user.system_ip }}</p>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: var(--space-2);">
+                                {% if user.weekly_schedule and not user.weekly_schedule.is_synced %}
+                                    <div class="badge badge-warning">
+                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                        </svg>
+                                        Not Synced
+                                    </div>
+                                {% elif user.weekly_schedule and user.weekly_schedule.is_synced %}
+                                    <div class="badge badge-success">
+                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                        </svg>
+                                        Synced
+                                    </div>
+                                {% endif %}
+                                <a href="{{ url_for('weekly_schedule_user', user_id=user.id) }}" class="btn btn-sm btn-secondary">Details</a>
+                            </div>
                         </div>
                         
-                        <div class="schedule-form">
+                        <div class="user-card-body">
                             <form id="schedule-form-{{ user.id }}" method="POST" action="{{ url_for('update_weekly_schedule') }}">
                                 <input type="hidden" name="user_id" value="{{ user.id }}">
                                 
-                                <div class="schedule-header">
-                                    <h3>Weekly Time Limits (hours per day)</h3>
-                                    <div class="current-schedule-summary">
-                                        {% if user.weekly_schedule %}
-                                            {% set schedule = user.weekly_schedule.get_schedule_dict() %}
-                                            <div class="schedule-summary">
-                                                <strong>Current Schedule:</strong>
-                                                <span class="schedule-quick-view">
-                                                    Mon:{{ schedule['monday'] }}h, Tue:{{ schedule['tuesday'] }}h, Wed:{{ schedule['wednesday'] }}h, Thu:{{ schedule['thursday'] }}h, Fri:{{ schedule['friday'] }}h, Sat:{{ schedule['saturday'] }}h, Sun:{{ schedule['sunday'] }}h
-                                                </span>
+                                <div class="schedule-section">
+                                    <h3 class="schedule-section-title">Weekly Time Limits (hours per day)</h3>
+                                    {% if user.weekly_schedule %}
+                                        {% set schedule = user.weekly_schedule.get_schedule_dict() %}
+                                        <div style="margin-bottom: var(--space-4); padding: var(--space-3); background: var(--bg-secondary); border-radius: var(--radius-md); font-size: var(--font-size-sm);">
+                                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); gap: var(--space-2); text-align: center;">
+                                                <div><strong>Mon:</strong> {{ schedule['monday'] }}h</div>
+                                                <div><strong>Tue:</strong> {{ schedule['tuesday'] }}h</div>
+                                                <div><strong>Wed:</strong> {{ schedule['wednesday'] }}h</div>
+                                                <div><strong>Thu:</strong> {{ schedule['thursday'] }}h</div>
+                                                <div><strong>Fri:</strong> {{ schedule['friday'] }}h</div>
+                                                <div><strong>Sat:</strong> {{ schedule['saturday'] }}h</div>
+                                                <div><strong>Sun:</strong> {{ schedule['sunday'] }}h</div>
                                             </div>
-                                        {% endif %}
-                                    </div>
-                                    <div class="weekday-controls">
-                                        <label>Set all weekdays (Mon-Fri):</label>
-                                        <input type="number" id="weekday-hours-{{ user.id }}" min="0" max="24" step="0.5" placeholder="Hours">
-                                        <button type="button" class="btn btn-mobile btn-set-weekdays" onclick="setWeekdayHours({{ user.id }})">Apply to Weekdays</button>
+                                        </div>
+                                    {% endif %}
+                                    <div class="schedule-controls">
+                                        <label style="font-weight: 500;">Quick set (Mon-Fri):</label>
+                                        <input type="number" id="weekday-hours-{{ user.id }}" min="0" max="24" step="0.5" placeholder="Hours" class="form-control" style="width: 100px;">
+                                        <button type="button" class="btn btn-sm btn-secondary" onclick="setWeekdayHours({{ user.id }})">Apply to Weekdays</button>
                                     </div>
                                 </div>
                                 
                                 <div class="schedule-grid">
                                     <div class="schedule-day">
-                                        <label for="monday-{{ user.id }}">Monday:</label>
+                                        <label for="monday-{{ user.id }}" class="schedule-day-label">Monday</label>
                                         <input type="number" 
                                                id="monday-{{ user.id }}" 
                                                name="monday" 
@@ -78,12 +114,12 @@
                                                max="24" 
                                                step="0.5"
                                                value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['monday'] }}{% else %}0{% endif %}"
-                                               class="schedule-input">
-                                        <span class="hours-label">hours</span>
+                                               class="schedule-input form-control">
+                                        <span style="font-size: var(--font-size-xs); color: var(--text-tertiary);">hours</span>
                                     </div>
                                     
                                     <div class="schedule-day">
-                                        <label for="tuesday-{{ user.id }}">Tuesday:</label>
+                                        <label for="tuesday-{{ user.id }}" class="schedule-day-label">Tuesday</label>
                                         <input type="number" 
                                                id="tuesday-{{ user.id }}" 
                                                name="tuesday" 
@@ -91,12 +127,12 @@
                                                max="24" 
                                                step="0.5"
                                                value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['tuesday'] }}{% else %}0{% endif %}"
-                                               class="schedule-input">
-                                        <span class="hours-label">hours</span>
+                                               class="schedule-input form-control">
+                                        <span style="font-size: var(--font-size-xs); color: var(--text-tertiary);">hours</span>
                                     </div>
                                     
                                     <div class="schedule-day">
-                                        <label for="wednesday-{{ user.id }}">Wednesday:</label>
+                                        <label for="wednesday-{{ user.id }}" class="schedule-day-label">Wednesday</label>
                                         <input type="number" 
                                                id="wednesday-{{ user.id }}" 
                                                name="wednesday" 
@@ -104,12 +140,12 @@
                                                max="24" 
                                                step="0.5"
                                                value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['wednesday'] }}{% else %}0{% endif %}"
-                                               class="schedule-input">
-                                        <span class="hours-label">hours</span>
+                                               class="schedule-input form-control">
+                                        <span style="font-size: var(--font-size-xs); color: var(--text-tertiary);">hours</span>
                                     </div>
                                     
                                     <div class="schedule-day">
-                                        <label for="thursday-{{ user.id }}">Thursday:</label>
+                                        <label for="thursday-{{ user.id }}" class="schedule-day-label">Thursday</label>
                                         <input type="number" 
                                                id="thursday-{{ user.id }}" 
                                                name="thursday" 
@@ -117,12 +153,12 @@
                                                max="24" 
                                                step="0.5"
                                                value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['thursday'] }}{% else %}0{% endif %}"
-                                               class="schedule-input">
-                                        <span class="hours-label">hours</span>
+                                               class="schedule-input form-control">
+                                        <span style="font-size: var(--font-size-xs); color: var(--text-tertiary);">hours</span>
                                     </div>
                                     
                                     <div class="schedule-day">
-                                        <label for="friday-{{ user.id }}">Friday:</label>
+                                        <label for="friday-{{ user.id }}" class="schedule-day-label">Friday</label>
                                         <input type="number" 
                                                id="friday-{{ user.id }}" 
                                                name="friday" 
@@ -130,12 +166,12 @@
                                                max="24" 
                                                step="0.5"
                                                value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['friday'] }}{% else %}0{% endif %}"
-                                               class="schedule-input">
-                                        <span class="hours-label">hours</span>
+                                               class="schedule-input form-control">
+                                        <span style="font-size: var(--font-size-xs); color: var(--text-tertiary);">hours</span>
                                     </div>
                                     
                                     <div class="schedule-day">
-                                        <label for="saturday-{{ user.id }}">Saturday:</label>
+                                        <label for="saturday-{{ user.id }}" class="schedule-day-label">Saturday</label>
                                         <input type="number" 
                                                id="saturday-{{ user.id }}" 
                                                name="saturday" 
@@ -143,12 +179,12 @@
                                                max="24" 
                                                step="0.5"
                                                value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['saturday'] }}{% else %}0{% endif %}"
-                                               class="schedule-input">
-                                        <span class="hours-label">hours</span>
+                                               class="schedule-input form-control">
+                                        <span style="font-size: var(--font-size-xs); color: var(--text-tertiary);">hours</span>
                                     </div>
                                     
                                     <div class="schedule-day">
-                                        <label for="sunday-{{ user.id }}">Sunday:</label>
+                                        <label for="sunday-{{ user.id }}" class="schedule-day-label">Sunday</label>
                                         <input type="number" 
                                                id="sunday-{{ user.id }}" 
                                                name="sunday" 
@@ -156,21 +192,33 @@
                                                max="24" 
                                                step="0.5"
                                                value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['sunday'] }}{% else %}0{% endif %}"
-                                               class="schedule-input">
-                                        <span class="hours-label">hours</span>
+                                               class="schedule-input form-control">
+                                        <span style="font-size: var(--font-size-xs); color: var(--text-tertiary);">hours</span>
                                     </div>
                                 </div>
                                 
                                 <div class="schedule-actions">
-                                    <button type="submit" class="btn btn-confirm">Save Schedule</button>
-                                    <button type="button" class="btn btn-cancel" onclick="resetScheduleForm({{ user.id }})">Reset</button>
+                                    <button type="submit" class="btn btn-primary">
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path d="M15.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L12.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                                            <path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                                        </svg>
+                                        Save Schedule
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" onclick="resetScheduleForm({{ user.id }})">
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                                        </svg>
+                                        Reset
+                                    </button>
                                 </div>
                                 
                                 {% if user.weekly_schedule %}
-                                    <div class="schedule-info">
-                                        <div class="info-item">
-                                            <span class="info-label">Last Modified:</span>
-                                            <span class="info-value">
+                                    <div style="margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--border-primary); font-size: var(--font-size-xs); color: var(--text-muted);">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: var(--space-2);">
+                                            <span>Last Modified:</span>
+                                            <span>
                                                 {% if user.weekly_schedule.last_modified %}
                                                     {{ user.weekly_schedule.last_modified.strftime('%Y-%m-%d %H:%M') }}
                                                 {% else %}
@@ -179,11 +227,9 @@
                                             </span>
                                         </div>
                                         {% if user.weekly_schedule.last_synced %}
-                                            <div class="info-item">
-                                                <span class="info-label">Last Synced:</span>
-                                                <span class="info-value">
-                                                    {{ user.weekly_schedule.last_synced.strftime('%Y-%m-%d %H:%M') }}
-                                                </span>
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <span>Last Synced:</span>
+                                                <span>{{ user.weekly_schedule.last_synced.strftime('%Y-%m-%d %H:%M') }}</span>
                                             </div>
                                         {% endif %}
                                     </div>
@@ -193,10 +239,13 @@
                     </div>
                 {% endfor %}
             {% else %}
-                <div class="empty-state full-width">
+                <div class="empty-state" style="grid-column: 1 / -1;">
+                    <svg width="48" height="48" fill="var(--text-muted)" viewBox="0 0 16 16" style="margin-bottom: var(--space-4);">
+                        <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816zM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                    </svg>
                     <h2>No Users Available</h2>
                     <p>No valid users have been added yet. Go to the Admin Panel to add and manage users.</p>
-                    <a href="{{ url_for('admin') }}" class="btn btn-admin">Go to Admin Panel</a>
+                    <a href="{{ url_for('admin') }}" class="btn btn-primary btn-lg">Go to Admin Panel</a>
                 </div>
             {% endif %}
         </div>

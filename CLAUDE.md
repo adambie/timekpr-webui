@@ -7,6 +7,9 @@ This is a Flask-based web application that provides remote management for Timekp
 
 ## Development Commands
 
+### Python Version Compatibility
+This application is compatible with Python 3.8+ including Python 3.13. For Python 3.13 users, SQLAlchemy version 2.0.25 or later is required (automatically handled in requirements.txt).
+
 ### Running the Application
 ```bash
 # Using Python directly

@@ -3,26 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TimeKpr webUI Dashboard</title>
+    <title>Dashboard - TimeKpr WebUI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </head>
-<body class="dashboard-body">
+<body>
     <div class="dashboard-container">
         <header class="dashboard-header">
-            <h1>TimeKpr webUI Dashboard</h1>
-            <div class="user-controls">
+            <div class="dashboard-title">
+                <h1>TimeKpr Dashboard</h1>
+                <p class="dashboard-subtitle">Parental Control Management</p>
+            </div>
+            <div class="dashboard-controls">
                 <div class="task-status-container">
-                    <span class="task-status">
-                        Background Tasks: <span id="task-status-indicator" class="status-unknown">Unknown</span>
-                    </span>
-                    <a href="{{ url_for('restart_tasks') }}" class="btn btn-sm btn-restart" title="Restart Background Tasks">
-                        <span class="restart-icon">↻</span>
+                    <span class="status-indicator" id="task-status-indicator">Unknown</span>
+                    <a href="{{ url_for('restart_tasks') }}" class="btn btn-sm btn-secondary btn-icon" title="Restart Background Tasks">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
                     </a>
                 </div>
-                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin</a>
-                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-settings">Settings</a>
-                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
+                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-secondary">Admin</a>
+                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-secondary">Settings</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger">Logout</a>
             </div>
         </header>
         
@@ -73,55 +78,62 @@
             {% endif %}
         {% endwith %}
         
-        <div class="user-grid">
+        <div class="users-grid">
             {% if users %}
                 {% for user in users %}
-                    <div class="user-tile">
-                        <div class="user-tile-header">
-                            <h2>{{ user.username }}</h2>
-                            <div class="user-location">{{ user.system_ip }}</div>
+                    <div class="user-card">
+                        <div class="user-card-header">
+                            <div class="user-info">
+                                <h2 class="user-name">{{ user.username }}</h2>
+                                <p class="user-location">{{ user.system_ip }}</p>
+                            </div>
                         </div>
-                        <div class="user-tile-info">
-                            <div class="info-item">
-                                <div class="info-label">Time Left Today:</div>
-                                <div class="info-value">{{ user.time_left }}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Last Updated:</div>
-                                <div class="info-value">
-                                    {% if user.last_checked %}
-                                        {{ user.last_checked.strftime('%Y-%m-%d %H:%M') }}
-                                    {% else %}
-                                        Never
-                                    {% endif %}
+                        <div class="user-card-body">
+                            <div class="user-stats">
+                                <div class="stat-item">
+                                    <div class="stat-label">Time Left Today</div>
+                                    <div class="stat-value">{{ user.time_left }}</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-label">Last Updated</div>
+                                    <div class="stat-value">
+                                        {% if user.last_checked %}
+                                            {{ user.last_checked.strftime('%H:%M') }}
+                                        {% else %}
+                                            Never
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
+                            
                             {% if user.id|string in pending_adjustments %}
-                            <div class="info-item pending-item">
-                                <div class="info-label">Pending Time Adjustment:</div>
-                                <div class="info-value pending-value">
-                                    {{ pending_adjustments[user.id|string] }}
-                                </div>
+                            <div class="badge badge-warning" style="margin-bottom: var(--space-4);">
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                </svg>
+                                Pending: {{ pending_adjustments[user.id|string] }}
                             </div>
                             {% endif %}
                             {% if user.weekly_schedule and not user.weekly_schedule.is_synced %}
-                            <div class="info-item pending-item">
-                                <div class="info-label">Weekly Schedule:</div>
-                                <div class="info-value pending-value">
-                                    ⚠ Not Synced
-                                </div>
+                            <div class="badge badge-warning" style="margin-bottom: var(--space-4);">
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                </svg>
+                                Schedule Not Synced
                             </div>
                             {% endif %}
-                            <div class="info-item action-item">
-                                <div class="action-buttons">
-                                    <button class="btn btn-adjust-time" onclick="openTimeAdjustModal({{ user.id }}, '{{ user.username }}')">Adjust Time</button>
-                                    <a href="{{ url_for('weekly_schedule_user', user_id=user.id) }}" class="btn btn-schedule">Weekly Schedule</a>
-                                </div>
+                            
+                            <div class="user-actions">
+                                <button class="btn btn-primary" onclick="openTimeAdjustModal({{ user.id }}, '{{ user.username }}')">Adjust Time</button>
+                                <a href="{{ url_for('weekly_schedule_user', user_id=user.id) }}" class="btn btn-secondary">Schedule</a>
                             </div>
                         </div>
-                        <div class="user-tile-chart">
-                            <h3>Time Usage (Last 7 Days)</h3>
-                            <canvas id="chart-{{ user.id }}" width="400" height="200"></canvas>
+                            
+                            <div class="user-chart">
+                                <h4 class="chart-title">Usage This Week</h4>
+                                <div class="chart-container">
+                                    <canvas id="chart-{{ user.id }}"></canvas>
+                                </div>
                         </div>
                     </div>
                     
@@ -164,70 +176,60 @@
                                         backgroundColor: function(context) {
                                             const index = context.dataIndex;
                                             const weekday = labels[index];
-                                            // Highlight weekends with different color
+                                            // Use theme-aware colors
                                             if (weekday === 'Sat' || weekday === 'Sun') {
-                                                return 'rgba(255, 193, 7, 0.6)'; // Orange for weekends
+                                                return 'rgb(245 158 11 / 0.6)'; // Warning color for weekends
                                             }
-                                            return 'rgba(54, 162, 235, 0.6)'; // Blue for weekdays
+                                            return 'rgb(59 130 246 / 0.6)'; // Primary color for weekdays
                                         },
                                         borderColor: function(context) {
                                             const index = context.dataIndex;
                                             const weekday = labels[index];
                                             if (weekday === 'Sat' || weekday === 'Sun') {
-                                                return 'rgba(255, 193, 7, 1)';
+                                                return 'rgb(245 158 11)';
                                             }
-                                            return 'rgba(54, 162, 235, 1)';
+                                            return 'rgb(59 130 246)';
                                         },
                                         borderWidth: 2,
-                                        borderRadius: 4,
+                                        borderRadius: 6,
                                         borderSkipped: false
                                     }]
                                 },
                                 options: {
                                     responsive: true,
+                                    maintainAspectRatio: false,
+                                    interaction: {
+                                        intersect: false,
+                                        mode: 'index'
+                                    },
                                     scales: {
                                         y: {
                                             beginAtZero: true,
-                                            title: {
-                                                display: true,
-                                                text: 'Hours Used',
-                                                font: {
-                                                    size: 12,
-                                                    weight: 'bold'
-                                                }
-                                            },
                                             grid: {
-                                                color: 'rgba(0, 0, 0, 0.1)',
+                                                color: 'rgb(226 232 240 / 0.5)',
                                             },
                                             ticks: {
+                                                color: 'rgb(100 116 139)',
                                                 font: {
                                                     size: 11
                                                 }
                                             }
                                         },
                                         x: {
-                                            title: {
-                                                display: true,
-                                                text: 'Day of Week',
-                                                font: {
-                                                    size: 12,
-                                                    weight: 'bold'
-                                                }
-                                            },
                                             grid: {
                                                 display: false
                                             },
                                             ticks: {
-                                                font: {
-                                                    size: 12,
-                                                    weight: 'bold'
-                                                },
                                                 color: function(context) {
                                                     const weekday = labels[context.index];
                                                     if (weekday === 'Sat' || weekday === 'Sun') {
-                                                        return '#ff6b35'; // Orange text for weekends
+                                                        return 'rgb(245 158 11)'; // Warning color for weekends
                                                     }
-                                                    return '#495057'; // Dark text for weekdays
+                                                    return 'rgb(100 116 139)'; // Tertiary text for weekdays
+                                                },
+                                                font: {
+                                                    size: 12,
+                                                    weight: '600'
                                                 }
                                             }
                                         }
@@ -256,11 +258,6 @@
                                                 }
                                             }
                                         }
-                                    },
-                                    maintainAspectRatio: false,
-                                    interaction: {
-                                        intersect: false,
-                                        mode: 'index'
                                     }
                                 }
                             });
@@ -268,10 +265,10 @@
                     </script>
                 {% endfor %}
             {% else %}
-                <div class="empty-state full-width">
+                <div class="empty-state" style="grid-column: 1 / -1;">
                     <h2>No Users Available</h2>
                     <p>No valid users have been added yet. Go to the Admin Panel to add and manage users.</p>
-                    <a href="{{ url_for('admin') }}" class="btn btn-admin">Go to Admin Panel</a>
+                    <a href="{{ url_for('admin') }}" class="btn btn-primary btn-lg">Go to Admin Panel</a>
                 </div>
             {% endif %}
         </div>
@@ -281,23 +278,39 @@
     <div id="timeAdjustModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Adjust Time for <span id="modalUsername"></span></h2>
-                <span class="close-modal" onclick="closeTimeAdjustModal()">&times;</span>
+                <h2 class="modal-title">Adjust Time for <span id="modalUsername"></span></h2>
+                <button class="modal-close" onclick="closeTimeAdjustModal()" type="button">
+                    <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
             <div class="modal-body">
-                <p>Current adjustment: <span id="timeAdjustment">0</span> minutes</p>
+                <p style="text-align: center; margin-bottom: var(--space-6);">
+                    Current adjustment: <strong id="timeAdjustment" style="font-size: var(--font-size-lg);">0</strong> minutes
+                </p>
                 
                 <div class="time-controls">
-                    <button class="btn btn-time-adjust" onclick="adjustTime(-15)">-15m</button>
-                    <button class="btn btn-time-adjust btn-reset" onclick="resetTime()">Reset</button>
-                    <button class="btn btn-time-adjust" onclick="adjustTime(15)">+15m</button>
+                    <button class="btn btn-secondary" onclick="adjustTime(-15)">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0zM8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM4.5 7.5a.5.5 0 0 0 0 1h5a.5.5 0 0 0 0-1h-5z"/>
+                        </svg>
+                        -15m
+                    </button>
+                    <button class="btn btn-ghost" onclick="resetTime()">Reset</button>
+                    <button class="btn btn-secondary" onclick="adjustTime(15)">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zM8.5 4.5a.5.5 0 0 0-1 0v3h-3a.5.5 0 0 0 0 1h3v3a.5.5 0 0 0 1 0v-3h3a.5.5 0 0 0 0-1h-3v-3z"/>
+                        </svg>
+                        +15m
+                    </button>
                 </div>
                 
-                <div class="modal-footer">
-                    <div id="modalStatus" class="modal-status"></div>
-                    <button class="btn btn-cancel" onclick="closeTimeAdjustModal()">Cancel</button>
-                    <button class="btn btn-confirm" onclick="submitTimeAdjustment()">Confirm</button>
-                </div>
+                <div id="modalStatus" style="text-align: center; margin: var(--space-4) 0; min-height: 20px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeTimeAdjustModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitTimeAdjustment()">Apply Changes</button>
             </div>
         </div>
     </div>
@@ -343,11 +356,11 @@
             
             // Update color based on value
             if (timeAdjustment > 0) {
-                display.className = 'time-positive';
+                display.style.color = 'var(--success)';
             } else if (timeAdjustment < 0) {
-                display.className = 'time-negative';
+                display.style.color = 'var(--danger)';
             } else {
-                display.className = '';
+                display.style.color = 'var(--text-primary)';
             }
         }
         

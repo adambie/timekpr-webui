@@ -5,23 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TimeKpr webUI Admin Panel</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </head>
-<body class="dashboard-body">
+<body>
     <div class="dashboard-container">
         <header class="dashboard-header">
-            <h1>TimeKpr webUI Admin Panel</h1>
-            <div class="user-controls">
+            <div class="dashboard-title">
+                <h1>Admin Panel</h1>
+                <p class="dashboard-subtitle">User Management & System Control</p>
+            </div>
+            <div class="dashboard-controls">
                 <div class="task-status-container">
-                    <span class="task-status">
-                        Background Tasks: <span id="task-status-indicator" class="status-unknown">Unknown</span>
-                    </span>
-                    <a href="{{ url_for('restart_tasks') }}" class="btn btn-sm btn-restart" title="Restart Background Tasks">
-                        <span class="restart-icon">↻</span>
+                    <span class="status-indicator" id="task-status-indicator">Unknown</span>
+                    <a href="{{ url_for('restart_tasks') }}" class="btn btn-sm btn-secondary btn-icon" title="Restart Background Tasks">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
                     </a>
                 </div>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-dashboard">Dashboard</a>
-                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-settings">Settings</a>
-                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-secondary">Dashboard</a>
+                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-secondary">Settings</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger">Logout</a>
             </div>
         </header>
         
@@ -67,29 +72,48 @@
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    <div class="alert alert-{{ category }}">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            {% if category == 'success' %}
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                            {% elif category == 'danger' or category == 'error' %}
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                            {% elif category == 'warning' %}
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            {% else %}
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                            {% endif %}
+                        </svg>
+                        {{ message }}
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
         
-        <div class="dashboard-main">
+        <div class="users-grid" style="grid-template-columns: 1fr;">
             <div class="card">
                 <div class="card-header">
                     <h2>Add New User</h2>
+                    <p style="margin: 0; color: var(--text-tertiary); font-size: var(--font-size-sm);">Add a new user to monitor and manage across your network</p>
                 </div>
                 <div class="card-body">
                     <form action="{{ url_for('add_user') }}" method="POST">
-                        <div class="form-row">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: var(--space-4); align-items: end;">
                             <div class="form-group">
-                                <label for="username">Username</label>
+                                <label for="username" class="form-label">Username</label>
                                 <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" required>
                             </div>
                             <div class="form-group">
-                                <label for="system_ip">System IP</label>
-                                <input type="text" id="system_ip" name="system_ip" class="form-control" placeholder="Enter IP address" required>
+                                <label for="system_ip" class="form-label">System IP Address</label>
+                                <input type="text" id="system_ip" name="system_ip" class="form-control" placeholder="192.168.1.100" required>
                             </div>
-                            <div class="form-group form-button">
-                                <button type="submit" class="btn btn-add">Add User</button>
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                        <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+                                    </svg>
+                                    Add User
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -99,46 +123,70 @@
             <div class="card">
                 <div class="card-header">
                     <h2>Managed Users</h2>
+                    <p style="margin: 0; color: var(--text-tertiary); font-size: var(--font-size-sm);">Monitor and control all users across your network</p>
                 </div>
                 <div class="card-body">
                     {% if users %}
-                        <div class="table-container">
-                            <table class="data-table">
+                        <div style="overflow-x: auto;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: var(--font-size-sm);">
                                 <thead>
-                                    <tr>
-                                        <th>Username</th>
-                                        <th>System IP</th>
-                                        <th>Status</th>
-                                        <th>Added On</th>
-                                        <th>Last Checked</th>
-                                        <th>Actions</th>
+                                    <tr style="border-bottom: 2px solid var(--border-primary);">
+                                        <th style="padding: var(--space-4); text-align: left; font-weight: 600; color: var(--text-primary);">Username</th>
+                                        <th style="padding: var(--space-4); text-align: left; font-weight: 600; color: var(--text-primary);">System IP</th>
+                                        <th style="padding: var(--space-4); text-align: left; font-weight: 600; color: var(--text-primary);">Status</th>
+                                        <th style="padding: var(--space-4); text-align: left; font-weight: 600; color: var(--text-primary);">Added On</th>
+                                        <th style="padding: var(--space-4); text-align: left; font-weight: 600; color: var(--text-primary);">Last Checked</th>
+                                        <th style="padding: var(--space-4); text-align: left; font-weight: 600; color: var(--text-primary);">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {% for user in users %}
-                                        <tr>
-                                            <td>{{ user.username }}</td>
-                                            <td>{{ user.system_ip }}</td>
-                                            <td>
+                                        <tr style="border-bottom: 1px solid var(--border-primary); transition: background-color var(--transition-fast);" onmouseover="this.style.backgroundColor='var(--bg-tertiary)'" onmouseout="this.style.backgroundColor='transparent'">
+                                            <td style="padding: var(--space-4); font-weight: 500;">{{ user.username }}</td>
+                                            <td style="padding: var(--space-4); color: var(--text-secondary); font-family: monospace;">{{ user.system_ip }}</td>
+                                            <td style="padding: var(--space-4);">
                                                 {% if user.is_valid %}
-                                                    <span class="status status-valid">Valid</span>
+                                                    <span class="badge badge-success">
+                                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                                        </svg>
+                                                        Valid
+                                                    </span>
                                                 {% else %}
-                                                    <span class="status status-invalid">Invalid</span>
+                                                    <span class="badge badge-danger">
+                                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                            <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                                                        </svg>
+                                                        Invalid
+                                                    </span>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ user.date_added.strftime('%Y-%m-%d %H:%M') }}</td>
-                                            <td>
+                                            <td style="padding: var(--space-4); color: var(--text-secondary); font-size: var(--font-size-xs);">{{ user.date_added.strftime('%Y-%m-%d %H:%M') }}</td>
+                                            <td style="padding: var(--space-4); color: var(--text-secondary); font-size: var(--font-size-xs);">
                                                 {% if user.last_checked %}
                                                     {{ user.last_checked.strftime('%Y-%m-%d %H:%M') }}
                                                 {% else %}
-                                                    Never
+                                                    <span style="color: var(--text-muted);">Never</span>
                                                 {% endif %}
                                             </td>
-                                            <td class="actions">
-                                                <a href="{{ url_for('validate_user', user_id=user.id) }}" class="btn btn-sm btn-validate">Validate</a>
-                                                <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" class="inline-form">
-                                                    <button type="submit" class="btn btn-sm btn-delete">Delete</button>
-                                                </form>
+                                            <td style="padding: var(--space-4);">
+                                                <div style="display: flex; gap: var(--space-2);">
+                                                    <a href="{{ url_for('validate_user', user_id=user.id) }}" class="btn btn-sm btn-secondary">
+                                                        <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                            <path d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.622.638-.89-.011a2.89 2.89 0 0 0-2.924 2.924l.01.89-.636.622a2.89 2.89 0 0 0 0 4.134l.637.622-.011.89a2.89 2.89 0 0 0 2.924 2.924l.89-.01.622.636a2.89 2.89 0 0 0 4.134 0l.622-.637.89.011a2.89 2.89 0 0 0 2.924-2.924l-.01-.89.636-.622a2.89 2.89 0 0 0 0-4.134l-.637-.622.011-.89a2.89 2.89 0 0 0-2.924-2.924l-.89.01-.622-.636zm.287 5.984-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 8.793l2.646-2.647a.5.5 0 0 1 .708.708z"/>
+                                                        </svg>
+                                                        Validate
+                                                    </a>
+                                                    <form action="{{ url_for('delete_user', user_id=user.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this user?')">
+                                                        <button type="submit" class="btn btn-sm btn-danger">
+                                                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                                                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                                                                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+                                                            </svg>
+                                                            Delete
+                                                        </button>
+                                                    </form>
+                                                </div>
                                             </td>
                                         </tr>
                                     {% endfor %}
@@ -147,7 +195,11 @@
                         </div>
                     {% else %}
                         <div class="empty-state">
-                            <p>No users have been added yet.</p>
+                            <svg width="48" height="48" fill="var(--text-muted)" viewBox="0 0 16 16" style="margin-bottom: var(--space-4);">
+                                <path d="M15 14s1 0 1-1-1-4-5-4-5 3-5 4 1 1 1 1h8zm-7.978-1A.261.261 0 0 1 7 12.996c.001-.264.167-1.03.76-1.72C8.312 10.629 9.282 10 11 10c1.717 0 2.687.63 3.24 1.276.593.69.758 1.457.76 1.72l-.008.002a.274.274 0 0 1-.014.002H7.022zM11 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4zm3-2a3 3 0 1 1-6 0 3 3 0 0 1 6 0zM6.936 9.28a5.88 5.88 0 0 0-1.23-.247A7.35 7.35 0 0 0 5 9c-4 0-5 3-5 4 0 .667.333 1 1 1h4.216A2.238 2.238 0 0 1 5 13c0-1.01.377-2.042 1.09-2.904.243-.294.526-.569.846-.816zM4.92 10A5.493 5.493 0 0 0 4 13H1c0-.26.164-1.03.76-1.724.545-.636 1.492-1.256 3.16-1.275zM1.5 5.5a3 3 0 1 1 6 0 3 3 0 0 1-6 0zm3-2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/>
+                            </svg>
+                            <h3 style="margin-bottom: var(--space-2); color: var(--text-primary);">No Users Added</h3>
+                            <p style="margin-bottom: var(--space-4); color: var(--text-secondary);">Get started by adding your first user to monitor and manage.</p>
                         </div>
                     {% endif %}
                 </div>

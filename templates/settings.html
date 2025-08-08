@@ -5,23 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TimeKpr webUI Settings</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
 </head>
-<body class="dashboard-body">
+<body>
     <div class="dashboard-container">
         <header class="dashboard-header">
-            <h1>TimeKpr webUI Settings</h1>
-            <div class="user-controls">
+            <div class="dashboard-title">
+                <h1>Settings</h1>
+                <p class="dashboard-subtitle">Application Configuration & Security</p>
+            </div>
+            <div class="dashboard-controls">
                 <div class="task-status-container">
-                    <span class="task-status">
-                        Background Tasks: <span id="task-status-indicator" class="status-unknown">Unknown</span>
-                    </span>
-                    <a href="{{ url_for('restart_tasks') }}" class="btn btn-sm btn-restart" title="Restart Background Tasks">
-                        <span class="restart-icon">↻</span>
+                    <span class="status-indicator" id="task-status-indicator">Unknown</span>
+                    <a href="{{ url_for('restart_tasks') }}" class="btn btn-sm btn-secondary btn-icon" title="Restart Background Tasks">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
                     </a>
                 </div>
-                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-dashboard">Dashboard</a>
-                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin</a>
-                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-secondary">Dashboard</a>
+                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-secondary">Admin</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger">Logout</a>
             </div>
         </header>
         
@@ -58,44 +63,127 @@
                         indicator.textContent = 'Error';
                     });
             }
-            
-            // Check status immediately and then every 30 seconds
             updateTaskStatus();
             setInterval(updateTaskStatus, 30000);
+            
+            // Password confirmation validation
+            document.getElementById('confirm_password').addEventListener('input', function() {
+                const newPassword = document.getElementById('new_password').value;
+                const confirmPassword = this.value;
+                
+                if (confirmPassword && newPassword !== confirmPassword) {
+                    this.setCustomValidity('Passwords do not match');
+                    this.style.borderColor = 'var(--danger)';
+                } else {
+                    this.setCustomValidity('');
+                    this.style.borderColor = '';
+                }
+            });
+            
+            document.getElementById('new_password').addEventListener('input', function() {
+                const confirmPassword = document.getElementById('confirm_password');
+                if (confirmPassword.value && this.value !== confirmPassword.value) {
+                    confirmPassword.setCustomValidity('Passwords do not match');
+                    confirmPassword.style.borderColor = 'var(--danger)';
+                } else {
+                    confirmPassword.setCustomValidity('');
+                    confirmPassword.style.borderColor = '';
+                }
+            });
         </script>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    <div class="alert alert-{{ category }}">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            {% if category == 'success' %}
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                            {% elif category == 'danger' or category == 'error' %}
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                            {% elif category == 'warning' %}
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            {% else %}
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                            {% endif %}
+                        </svg>
+                        {{ message }}
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
         
-        <div class="dashboard-main">
+        <div class="users-grid" style="grid-template-columns: 1fr; max-width: 600px; margin: 0 auto;">
             <div class="card">
                 <div class="card-header">
-                    <h2>Change Password</h2>
+                    <div style="display: flex; align-items: center; gap: var(--space-3);">
+                        <svg width="24" height="24" fill="var(--text-secondary)" viewBox="0 0 16 16">
+                            <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zM5 8h6a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/>
+                        </svg>
+                        <div>
+                            <h2>Change Password</h2>
+                            <p style="margin: 0; color: var(--text-tertiary); font-size: var(--font-size-sm);">Update your admin and SSH access credentials</p>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
-                    <p class="settings-info">This password is used for both admin login and SSH connections.</p>
+                    <div class="alert alert-info" style="margin-bottom: var(--space-6);">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                        </svg>
+                        <strong>Important:</strong> This password is used for both admin login and SSH connections to managed systems.
+                    </div>
+                    
                     <form action="{{ url_for('settings') }}" method="POST">
                         <div class="form-group">
-                            <label for="current_password">Current Password</label>
-                            <input type="password" id="current_password" name="current_password" class="form-control" required>
+                            <label for="current_password" class="form-label">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: var(--space-2);">
+                                    <path d="M3.5 11.5a3.5 3.5 0 1 1 3.163-5H14L15.5 8 14 9.5l-1-1-1 1-1-1-1 1-1-1-1 1H6.663a3.5 3.5 0 0 1-3.163 2zM2.5 9a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+                                </svg>
+                                Current Password
+                            </label>
+                            <input type="password" id="current_password" name="current_password" class="form-control" placeholder="Enter your current password" required>
                         </div>
+                        
                         <div class="form-group">
-                            <label for="new_password">New Password</label>
-                            <input type="password" id="new_password" name="new_password" class="form-control" required>
+                            <label for="new_password" class="form-label">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: var(--space-2);">
+                                    <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+                                </svg>
+                                New Password
+                            </label>
+                            <input type="password" id="new_password" name="new_password" class="form-control" placeholder="Enter new password" required>
                         </div>
+                        
                         <div class="form-group">
-                            <label for="confirm_password">Confirm New Password</label>
-                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" required>
+                            <label for="confirm_password" class="form-label">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16" style="margin-right: var(--space-2);">
+                                    <path d="M10.067.87a2.89 2.89 0 0 0-4.134 0l-.622.638-.89-.011a2.89 2.89 0 0 0-2.924 2.924l.01.89-.636.622a2.89 2.89 0 0 0 0 4.134l.637.622-.011.89a2.89 2.89 0 0 0 2.924 2.924l.89-.01.622.636a2.89 2.89 0 0 0 4.134 0l.622-.637.89.011a2.89 2.89 0 0 0 2.924-2.924l-.01-.89.636-.622a2.89 2.89 0 0 0 0-4.134l-.637-.622.011-.89a2.89 2.89 0 0 0-2.924-2.924l-.89.01-.622-.636zm.287 5.984-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 1 1 .708-.708L7 8.793l2.646-2.647a.5.5 0 0 1 .708.708z"/>
+                                </svg>
+                                Confirm New Password
+                            </label>
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-control" placeholder="Confirm new password" required>
                         </div>
+                        
                         <div class="form-group">
-                            <button type="submit" class="btn btn-primary">Change Password</button>
+                            <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M15.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L12.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                                    <path d="M1 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H1zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+                                </svg>
+                                Update Password
+                            </button>
                         </div>
                     </form>
+                    
+                    <div style="margin-top: var(--space-6); padding-top: var(--space-6); border-top: 1px solid var(--border-primary);">
+                        <h4 style="color: var(--text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-3);">Security Tips</h4>
+                        <ul style="margin: 0; padding-left: var(--space-4); font-size: var(--font-size-sm); color: var(--text-tertiary);">
+                            <li style="margin-bottom: var(--space-1);">Use a strong password with at least 8 characters</li>
+                            <li style="margin-bottom: var(--space-1);">Include uppercase, lowercase, numbers, and symbols</li>
+                            <li>Ensure all remote systems use the same password for the timekpr-remote user</li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>

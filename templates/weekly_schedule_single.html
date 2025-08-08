@@ -5,944 +5,657 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Weekly Schedule - {{ user.username }} - TimeKpr webUI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <style>
+        .schedule-main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--space-6);
+        }
+        
+        .schedule-overview {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+            margin-bottom: var(--space-6);
+        }
+        
+        .schedule-controls {
+            display: flex;
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+            flex-wrap: wrap;
+        }
+        
+        .quick-control {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            background: var(--bg-secondary);
+            padding: var(--space-3) var(--space-4);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-primary);
+        }
+        
+        .quick-control label {
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            color: var(--text-secondary);
+            white-space: nowrap;
+        }
+        
+        .quick-input {
+            width: 80px;
+            padding: var(--space-2);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-sm);
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+            text-align: center;
+        }
+        
+        .schedule-table {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            overflow: hidden;
+        }
+        
+        .schedule-header-row {
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border-primary);
+            padding: var(--space-4) var(--space-6);
+            display: grid;
+            grid-template-columns: 120px 1fr 1fr;
+            gap: var(--space-4);
+            align-items: center;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .schedule-row {
+            padding: var(--space-4) var(--space-6);
+            display: grid;
+            grid-template-columns: 120px 1fr 1fr;
+            gap: var(--space-4);
+            align-items: center;
+            border-bottom: 1px solid var(--border-primary);
+            transition: background-color var(--transition-fast);
+        }
+        
+        .schedule-row:hover {
+            background: var(--bg-secondary);
+        }
+        
+        .schedule-row:last-child {
+            border-bottom: none;
+        }
+        
+        .day-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: var(--font-size-base);
+        }
+        
+        .weekend .day-name {
+            color: var(--warning);
+        }
+        
+        .time-section {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+        
+        .time-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .time-input {
+            width: 80px;
+            padding: var(--space-2) var(--space-3);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-md);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            text-align: center;
+            font-size: var(--font-size-base);
+            font-weight: 500;
+        }
+        
+        .time-input:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+        }
+        
+        .time-btn {
+            width: 32px;
+            height: 32px;
+            border: 1px solid var(--border-primary);
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: var(--font-size-base);
+            transition: all var(--transition-fast);
+        }
+        
+        .time-btn:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-secondary);
+        }
+        
+        .time-unit {
+            font-size: var(--font-size-sm);
+            color: var(--text-tertiary);
+            min-width: 40px;
+        }
+        
+        .interval-controls {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+        
+        .interval-toggle {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .interval-toggle input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent-primary);
+        }
+        
+        .interval-time {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+        
+        .time-select {
+            padding: var(--space-1) var(--space-2);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-sm);
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+        
+        .time-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .actions-section {
+            padding: var(--space-6);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            margin-top: var(--space-6);
+            display: flex;
+            justify-content: center;
+            gap: var(--space-4);
+        }
+        
+        .status-info {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: var(--font-size-sm);
+        }
+        
+        @media (max-width: 968px) {
+            .schedule-header-row,
+            .schedule-row {
+                grid-template-columns: 1fr;
+                gap: var(--space-3);
+            }
+            
+            .time-section {
+                justify-content: space-between;
+                padding: var(--space-3);
+                background: var(--bg-secondary);
+                border-radius: var(--radius-md);
+            }
+            
+            .interval-controls {
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+            
+            .schedule-controls {
+                flex-direction: column;
+            }
+            
+            .quick-control {
+                justify-content: space-between;
+            }
+        }
+    </style>
 </head>
-<body class="dashboard-body">
+<body>
     <div class="dashboard-container">
         <header class="dashboard-header">
-            <h1>Weekly Schedule - {{ user.username }}</h1>
-            <div class="user-controls">
-                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-back">← Back to Dashboard</a>
-                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-admin">Admin</a>
-                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-settings">Settings</a>
-                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-logout">Logout</a>
+            <div class="dashboard-title">
+                <h1>{{ user.username }} - Schedule</h1>
+                <p class="dashboard-subtitle">Manage time limits and allowed intervals</p>
+            </div>
+            <div class="dashboard-controls">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-sm btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                    </svg>
+                    Dashboard
+                </a>
+                <a href="{{ url_for('admin') }}" class="btn btn-sm btn-secondary">Admin</a>
+                <a href="{{ url_for('settings') }}" class="btn btn-sm btn-secondary">Settings</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-sm btn-danger">Logout</a>
             </div>
         </header>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    <div class="alert alert-{{ category }}">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            {% if category == 'success' %}
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                            {% elif category == 'danger' or category == 'error' %}
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z"/>
+                            {% elif category == 'warning' %}
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            {% else %}
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
+                            {% endif %}
+                        </svg>
+                        {{ message }}
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
         
-        <div class="single-user-schedule">
-            <div class="user-info-header">
-                <div class="user-details">
-                    <h2>{{ user.username }}</h2>
-                    <div class="user-location">{{ user.system_ip }}</div>
-                    <div class="user-status">
+        <div class="schedule-main">
+            <!-- Status Overview -->
+            <div class="schedule-overview">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-4);">
+                    <div>
+                        <h2 style="margin: 0;">{{ user.username }}</h2>
+                        <p style="margin: 0; color: var(--text-secondary); font-family: monospace;">{{ user.system_ip }}</p>
+                    </div>
+                    <div class="status-info">
                         {% if user.weekly_schedule and not user.weekly_schedule.is_synced %}
-                            <div class="sync-status unsynced" title="Changes not yet synced to remote system">
-                                ⚠ Schedule Not Synced
+                            <div class="badge badge-warning">
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                </svg>
+                                Changes Pending Sync
                             </div>
                         {% elif user.weekly_schedule and user.weekly_schedule.is_synced %}
-                            <div class="sync-status synced" title="Schedule synchronized with remote system">
-                                ✓ Schedule Synced
-                            </div>
-                        {% else %}
-                            <div class="sync-status neutral">
-                                No Schedule Set
+                            <div class="badge badge-success">
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                                Synchronized
                             </div>
                         {% endif %}
                     </div>
                 </div>
-            </div>
-            
-            <div class="schedule-form-container">
-                <form id="schedule-form" method="POST" action="{{ url_for('update_weekly_schedule') }}">
-                    <input type="hidden" name="user_id" value="{{ user.id }}">
-                    
-                    <div class="schedule-header">
-                        <h3>Weekly Time Limits (hours per day)</h3>
-                        <div class="current-schedule-summary">
-                            {% if user.weekly_schedule %}
-                                {% set schedule = user.weekly_schedule.get_schedule_dict() %}
-                                <div class="schedule-summary">
-                                    <h4>Current Schedule</h4>
-                                    <div class="schedule-overview">
-                                        <div class="schedule-week-row">
-                                            <div class="schedule-weekdays">
-                                                <h5>Weekdays</h5>
-                                                <div class="day-badges">
-                                                    <span class="day-badge">Mon: {{ schedule['monday'] }}h</span>
-                                                    <span class="day-badge">Tue: {{ schedule['tuesday'] }}h</span>
-                                                    <span class="day-badge">Wed: {{ schedule['wednesday'] }}h</span>
-                                                    <span class="day-badge">Thu: {{ schedule['thursday'] }}h</span>
-                                                    <span class="day-badge">Fri: {{ schedule['friday'] }}h</span>
-                                                </div>
-                                            </div>
-                                            <div class="schedule-weekends">
-                                                <h5>Weekends</h5>
-                                                <div class="day-badges">
-                                                    <span class="day-badge weekend">Sat: {{ schedule['saturday'] }}h</span>
-                                                    <span class="day-badge weekend">Sun: {{ schedule['sunday'] }}h</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="schedule-totals">
-                                            {% set total_week = schedule['monday'] + schedule['tuesday'] + schedule['wednesday'] + schedule['thursday'] + schedule['friday'] %}
-                                            {% set total_weekend = schedule['saturday'] + schedule['sunday'] %}
-                                            {% set total_all = total_week + total_weekend %}
-                                            <div class="total-badge">
-                                                <strong>Total: {{ total_all }}h/week</strong>
-                                                <small>({{ total_week }}h weekdays + {{ total_weekend }}h weekend)</small>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endif %}
-                        </div>
-                        <div class="weekday-controls">
-                            <div class="bulk-controls">
-                                <label>Quick Set Hours:</label>
-                                <div class="time-input-group">
-                                    <button type="button" class="btn-time-adjust btn-minus" onclick="adjustBulkTime(-0.25)">−</button>
-                                    <input type="number" id="bulk-hours" min="0" max="24" step="0.25" placeholder="Hours" class="schedule-input">
-                                    <button type="button" class="btn-time-adjust btn-plus" onclick="adjustBulkTime(0.25)">+</button>
-                                </div>
-                                <div class="bulk-buttons">
-                                    <button type="button" class="btn btn-mobile btn-set-weekdays" onclick="setWeekdayHours()">Apply to Weekdays</button>
-                                    <button type="button" class="btn btn-mobile btn-set-all" onclick="setAllDaysHours()">Apply to All Days</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="schedule-grid">
-                        <div class="schedule-day">
-                            <label for="monday">Monday:</label>
-                            <div class="time-input-group">
-                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('monday', -0.25)">−</button>
-                                <input type="number" 
-                                       id="monday" 
-                                       name="monday" 
-                                       min="0" 
-                                       max="24" 
-                                       step="0.25"
-                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['monday'] }}{% else %}0{% endif %}"
-                                       class="schedule-input">
-                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('monday', 0.25)">+</button>
-                            </div>
-                            <span class="hours-label">hours</span>
-                        </div>
-                        
-                        <div class="schedule-day">
-                            <label for="tuesday">Tuesday:</label>
-                            <div class="time-input-group">
-                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('tuesday', -0.25)">−</button>
-                                <input type="number" 
-                                       id="tuesday" 
-                                       name="tuesday" 
-                                       min="0" 
-                                       max="24" 
-                                       step="0.25"
-                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['tuesday'] }}{% else %}0{% endif %}"
-                                       class="schedule-input">
-                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('tuesday', 0.25)">+</button>
-                            </div>
-                            <span class="hours-label">hours</span>
-                        </div>
-                        
-                        <div class="schedule-day">
-                            <label for="wednesday">Wednesday:</label>
-                            <div class="time-input-group">
-                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('wednesday', -0.25)">−</button>
-                                <input type="number" 
-                                       id="wednesday" 
-                                       name="wednesday" 
-                                       min="0" 
-                                       max="24" 
-                                       step="0.25"
-                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['wednesday'] }}{% else %}0{% endif %}"
-                                       class="schedule-input">
-                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('wednesday', 0.25)">+</button>
-                            </div>
-                            <span class="hours-label">hours</span>
-                        </div>
-                        
-                        <div class="schedule-day">
-                            <label for="thursday">Thursday:</label>
-                            <div class="time-input-group">
-                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('thursday', -0.25)">−</button>
-                                <input type="number" 
-                                       id="thursday" 
-                                       name="thursday" 
-                                       min="0" 
-                                       max="24" 
-                                       step="0.25"
-                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['thursday'] }}{% else %}0{% endif %}"
-                                       class="schedule-input">
-                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('thursday', 0.25)">+</button>
-                            </div>
-                            <span class="hours-label">hours</span>
-                        </div>
-                        
-                        <div class="schedule-day">
-                            <label for="friday">Friday:</label>
-                            <div class="time-input-group">
-                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('friday', -0.25)">−</button>
-                                <input type="number" 
-                                       id="friday" 
-                                       name="friday" 
-                                       min="0" 
-                                       max="24" 
-                                       step="0.25"
-                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['friday'] }}{% else %}0{% endif %}"
-                                       class="schedule-input">
-                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('friday', 0.25)">+</button>
-                            </div>
-                            <span class="hours-label">hours</span>
-                        </div>
-                        
-                        <div class="schedule-day">
-                            <label for="saturday">Saturday:</label>
-                            <div class="time-input-group">
-                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('saturday', -0.25)">−</button>
-                                <input type="number" 
-                                       id="saturday" 
-                                       name="saturday" 
-                                       min="0" 
-                                       max="24" 
-                                       step="0.25"
-                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['saturday'] }}{% else %}0{% endif %}"
-                                       class="schedule-input">
-                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('saturday', 0.25)">+</button>
-                            </div>
-                            <span class="hours-label">hours</span>
-                        </div>
-                        
-                        <div class="schedule-day">
-                            <label for="sunday">Sunday:</label>
-                            <div class="time-input-group">
-                                <button type="button" class="btn-time-adjust btn-minus" onclick="adjustDayTime('sunday', -0.25)">−</button>
-                                <input type="number" 
-                                       id="sunday" 
-                                       name="sunday" 
-                                       min="0" 
-                                       max="24" 
-                                       step="0.25"
-                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()['sunday'] }}{% else %}0{% endif %}"
-                                       class="schedule-input">
-                                <button type="button" class="btn-time-adjust btn-plus" onclick="adjustDayTime('sunday', 0.25)">+</button>
-                            </div>
-                            <span class="hours-label">hours</span>
-                        </div>
-                    </div>
-                    
-                    <div class="schedule-actions">
-                        <button type="submit" class="btn btn-confirm">Save Schedule</button>
-                        <button type="button" class="btn btn-cancel" onclick="resetScheduleForm()">Reset</button>
-                    </div>
-                </form>
-                
-                <!-- Time Intervals Section -->
-                <div class="intervals-form-container">
-                    <div class="intervals-header">
-                        <h3>Allowed Time Intervals (when computer can be used)</h3>
-                        <div class="intervals-description">
-                            <p>Set specific time periods when the user can access their computer. This works together with the daily time limits above.</p>
-                        </div>
-                        <div class="interval-sync-status">
-                            <div id="intervals-sync-status" class="sync-status neutral">
-                                Loading intervals...
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="interval-quick-controls">
-                        <label>Quick Set Interval:</label>
-                        <div class="time-range-input-group">
-                            <select id="bulk-start-hour" class="time-select">
-                                {% for h in range(24) %}
-                                <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ '%02d'|format(h) }}</option>
-                                {% endfor %}
-                            </select>
-                            <span>:</span>
-                            <select id="bulk-start-minute" class="time-select">
-                                <option value="0" selected>00</option>
-                                <option value="15">15</option>
-                                <option value="30">30</option>
-                                <option value="45">45</option>
-                            </select>
-                            <span class="time-separator">to</span>
-                            <select id="bulk-end-hour" class="time-select">
-                                {% for h in range(24) %}
-                                <option value="{{ h }}" {% if h == 17 %}selected{% endif %}>{{ '%02d'|format(h) }}</option>
-                                {% endfor %}
-                            </select>
-                            <span>:</span>
-                            <select id="bulk-end-minute" class="time-select">
-                                <option value="0" selected>00</option>
-                                <option value="15">15</option>
-                                <option value="30">30</option>
-                                <option value="45">45</option>
-                            </select>
-                        </div>
-                        <div class="bulk-interval-buttons">
-                            <button type="button" class="btn btn-mobile btn-set-weekdays" onclick="setWeekdayIntervals()">Apply to Weekdays</button>
-                            <button type="button" class="btn btn-mobile btn-set-all" onclick="setAllDayIntervals()">Apply to All Days</button>
-                        </div>
-                    </div>
-                    
-                    <div class="intervals-grid">
-                        <div class="interval-day" data-day="1">
-                            <div class="interval-day-header">
-                                <label class="day-label">Monday:</label>
-                                <div class="interval-toggle">
-                                    <input type="checkbox" id="interval-enabled-1" class="interval-checkbox">
-                                    <label for="interval-enabled-1" class="checkbox-label">Enable</label>
-                                </div>
-                            </div>
-                            <div class="interval-time-controls">
-                                <div class="time-input-wrapper">
-                                    <select id="interval-start-hour-1" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-start-minute-1" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                                <span class="time-separator">to</span>
-                                <div class="time-input-wrapper">
-                                    <select id="interval-end-hour-1" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-end-minute-1" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="interval-day" data-day="2">
-                            <div class="interval-day-header">
-                                <label class="day-label">Tuesday:</label>
-                                <div class="interval-toggle">
-                                    <input type="checkbox" id="interval-enabled-2" class="interval-checkbox">
-                                    <label for="interval-enabled-2" class="checkbox-label">Enable</label>
-                                </div>
-                            </div>
-                            <div class="interval-time-controls">
-                                <div class="time-input-wrapper">
-                                    <select id="interval-start-hour-2" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-start-minute-2" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                                <span class="time-separator">to</span>
-                                <div class="time-input-wrapper">
-                                    <select id="interval-end-hour-2" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-end-minute-2" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="interval-day" data-day="3">
-                            <div class="interval-day-header">
-                                <label class="day-label">Wednesday:</label>
-                                <div class="interval-toggle">
-                                    <input type="checkbox" id="interval-enabled-3" class="interval-checkbox">
-                                    <label for="interval-enabled-3" class="checkbox-label">Enable</label>
-                                </div>
-                            </div>
-                            <div class="interval-time-controls">
-                                <div class="time-input-wrapper">
-                                    <select id="interval-start-hour-3" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-start-minute-3" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                                <span class="time-separator">to</span>
-                                <div class="time-input-wrapper">
-                                    <select id="interval-end-hour-3" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-end-minute-3" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="interval-day" data-day="4">
-                            <div class="interval-day-header">
-                                <label class="day-label">Thursday:</label>
-                                <div class="interval-toggle">
-                                    <input type="checkbox" id="interval-enabled-4" class="interval-checkbox">
-                                    <label for="interval-enabled-4" class="checkbox-label">Enable</label>
-                                </div>
-                            </div>
-                            <div class="interval-time-controls">
-                                <div class="time-input-wrapper">
-                                    <select id="interval-start-hour-4" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-start-minute-4" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                                <span class="time-separator">to</span>
-                                <div class="time-input-wrapper">
-                                    <select id="interval-end-hour-4" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-end-minute-4" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="interval-day" data-day="5">
-                            <div class="interval-day-header">
-                                <label class="day-label">Friday:</label>
-                                <div class="interval-toggle">
-                                    <input type="checkbox" id="interval-enabled-5" class="interval-checkbox">
-                                    <label for="interval-enabled-5" class="checkbox-label">Enable</label>
-                                </div>
-                            </div>
-                            <div class="interval-time-controls">
-                                <div class="time-input-wrapper">
-                                    <select id="interval-start-hour-5" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-start-minute-5" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                                <span class="time-separator">to</span>
-                                <div class="time-input-wrapper">
-                                    <select id="interval-end-hour-5" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-end-minute-5" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="interval-day" data-day="6">
-                            <div class="interval-day-header">
-                                <label class="day-label">Saturday:</label>
-                                <div class="interval-toggle">
-                                    <input type="checkbox" id="interval-enabled-6" class="interval-checkbox">
-                                    <label for="interval-enabled-6" class="checkbox-label">Enable</label>
-                                </div>
-                            </div>
-                            <div class="interval-time-controls">
-                                <div class="time-input-wrapper">
-                                    <select id="interval-start-hour-6" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-start-minute-6" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                                <span class="time-separator">to</span>
-                                <div class="time-input-wrapper">
-                                    <select id="interval-end-hour-6" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-end-minute-6" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="interval-day" data-day="7">
-                            <div class="interval-day-header">
-                                <label class="day-label">Sunday:</label>
-                                <div class="interval-toggle">
-                                    <input type="checkbox" id="interval-enabled-7" class="interval-checkbox">
-                                    <label for="interval-enabled-7" class="checkbox-label">Enable</label>
-                                </div>
-                            </div>
-                            <div class="interval-time-controls">
-                                <div class="time-input-wrapper">
-                                    <select id="interval-start-hour-7" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-start-minute-7" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                                <span class="time-separator">to</span>
-                                <div class="time-input-wrapper">
-                                    <select id="interval-end-hour-7" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>:</span>
-                                    <select id="interval-end-minute-7" class="time-select" disabled>
-                                        <option value="0">00</option>
-                                        <option value="15">15</option>
-                                        <option value="30">30</option>
-                                        <option value="45">45</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="intervals-actions">
-                        <button type="button" class="btn btn-confirm" onclick="saveIntervals()">Save Time Intervals</button>
-                        <button type="button" class="btn btn-cancel" onclick="resetIntervals()">Reset</button>
-                    </div>
-                </div>
                 
                 {% if user.weekly_schedule %}
-                    <div class="schedule-info">
-                            <div class="info-item">
-                                <span class="info-label">Last Modified:</span>
-                                <span class="info-value">
-                                    {% if user.weekly_schedule.last_modified %}
-                                        {{ user.weekly_schedule.last_modified.strftime('%Y-%m-%d %H:%M') }}
-                                    {% else %}
-                                        Never
-                                    {% endif %}
-                                </span>
-                            </div>
-                            {% if user.weekly_schedule.last_synced %}
-                                <div class="info-item">
-                                    <span class="info-label">Last Synced:</span>
-                                    <span class="info-value">
-                                        {{ user.weekly_schedule.last_synced.strftime('%Y-%m-%d %H:%M') }}
-                                    </span>
-                                </div>
-                            {% endif %}
+                    {% set schedule = user.weekly_schedule.get_schedule_dict() %}
+                    {% set total_week = schedule['monday'] + schedule['tuesday'] + schedule['wednesday'] + schedule['thursday'] + schedule['friday'] %}
+                    {% set total_weekend = schedule['saturday'] + schedule['sunday'] %}
+                    {% set total_all = total_week + total_weekend %}
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-4);">
+                        <div style="text-align: center; padding: var(--space-3); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                            <div style="font-size: var(--font-size-2xl); font-weight: 700; color: var(--accent-primary);">{{ total_all }}h</div>
+                            <div style="font-size: var(--font-size-sm); color: var(--text-tertiary);">Total per week</div>
                         </div>
-                    {% endif %}
-                </form>
+                        <div style="text-align: center; padding: var(--space-3); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                            <div style="font-size: var(--font-size-xl); font-weight: 600; color: var(--text-primary);">{{ total_week }}h</div>
+                            <div style="font-size: var(--font-size-sm); color: var(--text-tertiary);">Weekdays (Mon-Fri)</div>
+                        </div>
+                        <div style="text-align: center; padding: var(--space-3); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                            <div style="font-size: var(--font-size-xl); font-weight: 600; color: var(--warning);">{{ total_weekend }}h</div>
+                            <div style="font-size: var(--font-size-sm); color: var(--text-tertiary);">Weekend (Sat-Sun)</div>
+                        </div>
+                    </div>
+                {% endif %}
             </div>
+            
+            <!-- Quick Controls -->
+            <div class="schedule-controls">
+                <div class="quick-control">
+                    <label>Quick set hours:</label>
+                    <button type="button" class="btn btn-sm btn-ghost" onclick="adjustBulkTime(-0.25)">-15min</button>
+                    <input type="number" id="bulk-hours" min="0" max="24" step="0.25" placeholder="2.5" class="quick-input">
+                    <button type="button" class="btn btn-sm btn-ghost" onclick="adjustBulkTime(0.25)">+15min</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="setWeekdays()">Weekdays</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="setWeekends()">Weekends</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="setAllDays()">All Days</button>
+                </div>
+                <div class="quick-control">
+                    <label>Quick set interval:</label>
+                    <select id="bulk-start" class="time-select">
+                        {% for h in range(24) %}
+                        <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ '%02d:00'|format(h) }}</option>
+                        {% endfor %}
+                    </select>
+                    <span>to</span>
+                    <select id="bulk-end" class="time-select">
+                        {% for h in range(24) %}
+                        <option value="{{ h }}" {% if h == 17 %}selected{% endif %}>{{ '%02d:00'|format(h) }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="setWeekdayIntervals()">Weekdays</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="setWeekendIntervals()">Weekends</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="setAllIntervals()">All Days</button>
+                </div>
+            </div>
+            
+            <!-- Schedule Table -->
+            <form id="schedule-form" method="POST" action="{{ url_for('update_weekly_schedule') }}">
+                <input type="hidden" name="user_id" value="{{ user.id }}">
+                
+                <div class="schedule-table">
+                    <div class="schedule-header-row">
+                        <div>Day</div>
+                        <div>Daily Time Limit</div>
+                        <div>Allowed Time Interval</div>
+                    </div>
+                    
+                    {% set days = [
+                        ('monday', 'Monday', 1),
+                        ('tuesday', 'Tuesday', 2), 
+                        ('wednesday', 'Wednesday', 3),
+                        ('thursday', 'Thursday', 4),
+                        ('friday', 'Friday', 5),
+                        ('saturday', 'Saturday', 6),
+                        ('sunday', 'Sunday', 7)
+                    ] %}
+                    
+                    {% for day_key, day_name, day_num in days %}
+                    <div class="schedule-row {% if day_num >= 6 %}weekend{% endif %}">
+                        <div class="day-name">{{ day_name }}</div>
+                        
+                        <!-- Daily Time Limit -->
+                        <div class="time-section">
+                            <div class="time-controls">
+                                <button type="button" class="time-btn" onclick="adjustTime('{{ day_key }}', -0.25)">−</button>
+                                <input type="number" 
+                                       id="{{ day_key }}" 
+                                       name="{{ day_key }}" 
+                                       min="0" 
+                                       max="24" 
+                                       step="0.25"
+                                       value="{% if user.weekly_schedule %}{{ user.weekly_schedule.get_schedule_dict()[day_key] }}{% else %}0{% endif %}"
+                                       class="time-input">
+                                <button type="button" class="time-btn" onclick="adjustTime('{{ day_key }}', 0.25)">+</button>
+                            </div>
+                            <span class="time-unit">hours</span>
+                        </div>
+                        
+                        <!-- Time Intervals -->
+                        <div class="time-section">
+                            <div class="interval-controls">
+                                <div class="interval-toggle">
+                                    <input type="checkbox" id="interval-{{ day_num }}" onchange="toggleInterval({{ day_num }})">
+                                    <label for="interval-{{ day_num }}">Enable</label>
+                                </div>
+                                <div class="interval-time">
+                                    <select id="start-{{ day_num }}" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d:00'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>to</span>
+                                    <select id="end-{{ day_num }}" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d:00'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                
+                <!-- Actions -->
+                <div class="actions-section">
+                    <button type="button" class="btn btn-primary btn-lg" onclick="saveAll()">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path d="M15.854 5.146a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708 0l-1.5-1.5a.5.5 0 0 1 .708-.708L12.5 7.793l2.646-2.647a.5.5 0 0 1 .708 0z"/>
+                        </svg>
+                        Save All Changes
+                    </button>
+                    <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/>
+                            <path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/>
+                        </svg>
+                        Reset to Saved
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
     
     <script>
-        function setWeekdayHours() {
-            const bulkHours = document.getElementById('bulk-hours').value;
-            if (!bulkHours) {
-                alert('Please enter hours for weekdays');
-                return;
-            }
-            
-            // Set Monday through Friday
-            const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-            weekdays.forEach(day => {
-                document.getElementById(day).value = bulkHours;
-            });
-        }
+        // Intervals data
+        let intervals = {};
         
-        function setAllDaysHours() {
-            const bulkHours = document.getElementById('bulk-hours').value;
-            if (!bulkHours) {
-                alert('Please enter hours for all days');
-                return;
-            }
-            
-            // Set all days
-            const allDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-            allDays.forEach(day => {
-                document.getElementById(day).value = bulkHours;
-            });
-        }
-        
-        function adjustDayTime(dayId, adjustment) {
-            const input = document.getElementById(dayId);
-            let currentValue = parseFloat(input.value) || 0;
-            let newValue = currentValue + adjustment;
-            
-            // Ensure within bounds
-            if (newValue < 0) newValue = 0;
-            if (newValue > 24) newValue = 24;
-            
-            input.value = newValue;
-        }
-        
-        function adjustBulkTime(adjustment) {
-            const input = document.getElementById('bulk-hours');
-            let currentValue = parseFloat(input.value) || 0;
-            let newValue = currentValue + adjustment;
-            
-            // Ensure within bounds
-            if (newValue < 0) newValue = 0;
-            if (newValue > 24) newValue = 24;
-            
-            input.value = newValue;
-        }
-        
-        function resetScheduleForm() {
-            if (confirm('Are you sure you want to reset the schedule to the last saved values?')) {
-                // Reload the page to restore original values
-                window.location.reload();
-            }
-        }
-        
-        // Function to update sync status
-        function updateSyncStatus() {
-            fetch(`/api/schedule-sync-status/{{ user.id }}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const syncStatusElement = document.querySelector('.sync-status');
-                        const currentScheduleSummary = document.querySelector('.current-schedule-summary');
-                        
-                        if (syncStatusElement) {
-                            // Update sync status
-                            syncStatusElement.className = 'sync-status ' + (data.is_synced ? 'synced' : 'unsynced');
-                            
-                            if (data.is_synced) {
-                                syncStatusElement.innerHTML = '✓ Schedule Synced';
-                                syncStatusElement.title = 'Schedule synchronized with remote system';
-                            } else {
-                                syncStatusElement.innerHTML = '⚠ Schedule Not Synced';
-                                syncStatusElement.title = 'Changes not yet synced to remote system';
-                            }
-                        }
-                        
-                        // Update the current schedule summary if it changed
-                        if (data.schedule && currentScheduleSummary) {
-                            const scheduleQuickView = currentScheduleSummary.querySelector('.schedule-quick-view');
-                            if (scheduleQuickView) {
-                                const scheduleText = `Mon: ${data.schedule.monday}h, Tue: ${data.schedule.tuesday}h, Wed: ${data.schedule.wednesday}h, Thu: ${data.schedule.thursday}h, Fri: ${data.schedule.friday}h, Sat: ${data.schedule.saturday}h, Sun: ${data.schedule.sunday}h`;
-                                scheduleQuickView.textContent = scheduleText;
-                            }
-                        }
-                        
-                        // Update last synced info if available
-                        if (data.last_synced) {
-                            const lastSyncedElement = document.querySelector('.schedule-info .info-item:last-child .info-value');
-                            if (lastSyncedElement) {
-                                lastSyncedElement.textContent = data.last_synced;
-                            }
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching sync status:', error);
-                });
-        }
-        
-        // Add form change detection to show unsaved changes warning
+        // Load intervals on page load
         document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('schedule-form');
-            const inputs = form.querySelectorAll('input[type="number"]');
-            let originalValues = {};
-            
-            // Store original values
-            inputs.forEach(input => {
-                originalValues[input.name] = input.value;
-            });
-            
-            // Track changes
-            inputs.forEach(input => {
-                input.addEventListener('change', function() {
-                    let hasChanges = false;
-                    inputs.forEach(inp => {
-                        if (inp.value !== originalValues[inp.name]) {
-                            hasChanges = true;
-                        }
-                    });
-                    
-                    // Update form appearance based on changes
-                    if (hasChanges) {
-                        form.classList.add('has-changes');
-                    } else {
-                        form.classList.remove('has-changes');
-                    }
-                });
-            });
-            
-            // Start checking sync status every 5 seconds
-            updateSyncStatus();
-            setInterval(updateSyncStatus, 5000);
-            
-            // Load and setup intervals
             loadIntervals();
-            setupIntervalEventHandlers();
-            
-            // Check interval sync status periodically
-            updateIntervalsStatus();
-            setInterval(updateIntervalsStatus, 5000);
         });
         
-        // Time Intervals Functions
-        let currentIntervals = {};
+        // Time adjustment functions
+        function adjustTime(dayId, change) {
+            const input = document.getElementById(dayId);
+            let currentValue = parseFloat(input.value) || 0;
+            let newValue = Math.max(0, Math.min(24, currentValue + change));
+            input.value = newValue;
+        }
+        
+        // Bulk time setting functions
+        function setWeekdays() {
+            const hours = document.getElementById('bulk-hours').value;
+            if (!hours) return;
+            ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].forEach(day => {
+                document.getElementById(day).value = hours;
+            });
+        }
+        
+        function setWeekends() {
+            const hours = document.getElementById('bulk-hours').value;
+            if (!hours) return;
+            ['saturday', 'sunday'].forEach(day => {
+                document.getElementById(day).value = hours;
+            });
+        }
+        
+        function setAllDays() {
+            const hours = document.getElementById('bulk-hours').value;
+            if (!hours) return;
+            ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].forEach(day => {
+                document.getElementById(day).value = hours;
+            });
+        }
+        
+        // Interval functions
+        function toggleInterval(day) {
+            const checkbox = document.getElementById(`interval-${day}`);
+            const startSelect = document.getElementById(`start-${day}`);
+            const endSelect = document.getElementById(`end-${day}`);
+            
+            startSelect.disabled = !checkbox.checked;
+            endSelect.disabled = !checkbox.checked;
+        }
+        
+        function setWeekdayIntervals() {
+            const startHour = document.getElementById('bulk-start').value;
+            const endHour = document.getElementById('bulk-end').value;
+            
+            for (let day = 1; day <= 5; day++) {
+                document.getElementById(`interval-${day}`).checked = true;
+                document.getElementById(`start-${day}`).value = startHour;
+                document.getElementById(`end-${day}`).value = endHour;
+                toggleInterval(day);
+            }
+        }
+        
+        function setWeekendIntervals() {
+            const startHour = document.getElementById('bulk-start').value;
+            const endHour = document.getElementById('bulk-end').value;
+            
+            // Apply to weekends (Saturday = 6, Sunday = 7)
+            for (let day = 6; day <= 7; day++) {
+                document.getElementById(`interval-${day}`).checked = true;
+                document.getElementById(`start-${day}`).value = startHour;
+                document.getElementById(`end-${day}`).value = endHour;
+                toggleInterval(day);
+            }
+        }
+        
+        function setAllIntervals() {
+            const startHour = document.getElementById('bulk-start').value;
+            const endHour = document.getElementById('bulk-end').value;
+            
+            for (let day = 1; day <= 7; day++) {
+                document.getElementById(`interval-${day}`).checked = true;
+                document.getElementById(`start-${day}`).value = startHour;
+                document.getElementById(`end-${day}`).value = endHour;
+                toggleInterval(day);
+            }
+        }
         
         function loadIntervals() {
             fetch(`/api/user/{{ user.id }}/intervals`)
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        currentIntervals = data.intervals;
-                        populateIntervalForm(data.intervals);
+                        intervals = data.intervals;
+                        for (let day = 1; day <= 7; day++) {
+                            const interval = intervals[day];
+                            if (interval) {
+                                document.getElementById(`interval-${day}`).checked = interval.is_enabled;
+                                document.getElementById(`start-${day}`).value = interval.start_hour;
+                                document.getElementById(`end-${day}`).value = interval.end_hour;
+                                toggleInterval(day);
+                            }
+                        }
                     }
-                })
-                .catch(error => {
-                    console.error('Error loading intervals:', error);
                 });
         }
         
-        function populateIntervalForm(intervals) {
-            for (let day = 1; day <= 7; day++) {
-                const interval = intervals[day];
-                const enabled = interval ? interval.is_enabled : false;
-                
-                // Set checkbox state
-                document.getElementById(`interval-enabled-${day}`).checked = enabled;
-                
-                // Set time values or defaults
-                const startHour = interval ? interval.start_hour : 9;
-                const startMinute = interval ? interval.start_minute : 0;
-                const endHour = interval ? interval.end_hour : 17;
-                const endMinute = interval ? interval.end_minute : 0;
-                
-                document.getElementById(`interval-start-hour-${day}`).value = startHour;
-                document.getElementById(`interval-start-minute-${day}`).value = startMinute;
-                document.getElementById(`interval-end-hour-${day}`).value = endHour;
-                document.getElementById(`interval-end-minute-${day}`).value = endMinute;
-                
-                // Enable/disable time inputs based on checkbox
-                toggleIntervalInputs(day, enabled);
-            }
+        // Add bulk time adjustment function
+        function adjustBulkTime(change) {
+            const input = document.getElementById('bulk-hours');
+            let currentValue = parseFloat(input.value) || 0;
+            let newValue = Math.max(0, Math.min(24, currentValue + change));
+            input.value = newValue;
         }
         
-        function setupIntervalEventHandlers() {
-            // Setup checkbox change handlers
-            for (let day = 1; day <= 7; day++) {
-                const checkbox = document.getElementById(`interval-enabled-${day}`);
-                checkbox.addEventListener('change', function() {
-                    toggleIntervalInputs(day, this.checked);
-                });
-            }
-        }
-        
-        function toggleIntervalInputs(day, enabled) {
-            document.getElementById(`interval-start-hour-${day}`).disabled = !enabled;
-            document.getElementById(`interval-start-minute-${day}`).disabled = !enabled;
-            document.getElementById(`interval-end-hour-${day}`).disabled = !enabled;
-            document.getElementById(`interval-end-minute-${day}`).disabled = !enabled;
-        }
-        
-        function setWeekdayIntervals() {
-            const startHour = document.getElementById('bulk-start-hour').value;
-            const startMinute = document.getElementById('bulk-start-minute').value;
-            const endHour = document.getElementById('bulk-end-hour').value;
-            const endMinute = document.getElementById('bulk-end-minute').value;
+        // Combined save function for both schedule and intervals
+        function saveAll() {
+            // First, save the schedule by submitting the form
+            const form = document.getElementById('schedule-form');
+            const formData = new FormData(form);
             
-            if (!startHour || !endHour) {
-                alert('Please set the time range first');
-                return;
-            }
-            
-            // Apply to weekdays (Monday = 1 to Friday = 5)
-            for (let day = 1; day <= 5; day++) {
-                document.getElementById(`interval-enabled-${day}`).checked = true;
-                document.getElementById(`interval-start-hour-${day}`).value = startHour;
-                document.getElementById(`interval-start-minute-${day}`).value = startMinute;
-                document.getElementById(`interval-end-hour-${day}`).value = endHour;
-                document.getElementById(`interval-end-minute-${day}`).value = endMinute;
-                toggleIntervalInputs(day, true);
-            }
-        }
-        
-        function setAllDayIntervals() {
-            const startHour = document.getElementById('bulk-start-hour').value;
-            const startMinute = document.getElementById('bulk-start-minute').value;
-            const endHour = document.getElementById('bulk-end-hour').value;
-            const endMinute = document.getElementById('bulk-end-minute').value;
-            
-            if (!startHour || !endHour) {
-                alert('Please set the time range first');
-                return;
-            }
-            
-            // Apply to all days
-            for (let day = 1; day <= 7; day++) {
-                document.getElementById(`interval-enabled-${day}`).checked = true;
-                document.getElementById(`interval-start-hour-${day}`).value = startHour;
-                document.getElementById(`interval-start-minute-${day}`).value = startMinute;
-                document.getElementById(`interval-end-hour-${day}`).value = endHour;
-                document.getElementById(`interval-end-minute-${day}`).value = endMinute;
-                toggleIntervalInputs(day, true);
-            }
-        }
-        
-        function saveIntervals() {
-            const intervals = {};
-            
-            for (let day = 1; day <= 7; day++) {
-                const enabled = document.getElementById(`interval-enabled-${day}`).checked;
-                const startHour = parseInt(document.getElementById(`interval-start-hour-${day}`).value);
-                const startMinute = parseInt(document.getElementById(`interval-start-minute-${day}`).value);
-                const endHour = parseInt(document.getElementById(`interval-end-hour-${day}`).value);
-                const endMinute = parseInt(document.getElementById(`interval-end-minute-${day}`).value);
-                
-                intervals[day] = {
-                    is_enabled: enabled,
-                    start_hour: startHour,
-                    start_minute: startMinute,
-                    end_hour: endHour,
-                    end_minute: endMinute
-                };
-                
-                // Validate time range if enabled
-                if (enabled) {
-                    const startMinutes = startHour * 60 + startMinute;
-                    const endMinutes = endHour * 60 + endMinute;
-                    
-                    if (startMinutes >= endMinutes) {
-                        const dayNames = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-                        alert(`Invalid time range for ${dayNames[day]}: start time must be before end time`);
-                        return;
-                    }
-                }
-            }
-            
-            // Save intervals via API
-            fetch(`/api/user/{{ user.id }}/intervals/update`, {
+            // Save schedule
+            fetch(form.action, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ intervals: intervals })
+                body: formData
             })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Time intervals saved successfully!');
-                    loadIntervals(); // Reload to get updated sync status
-                    updateIntervalsStatus();
+            .then(response => {
+                if (response.ok) {
+                    // If schedule save successful, now save intervals
+                    return saveIntervals(false); // false means don't show alert yet
                 } else {
-                    alert('Error saving intervals: ' + data.message);
+                    throw new Error('Failed to save schedule');
                 }
+            })
+            .then(() => {
+                alert('All changes saved successfully!');
+                // Update status immediately instead of reloading
+                setTimeout(() => {
+                    updateSyncStatus();
+                }, 1000);
             })
             .catch(error => {
-                console.error('Error saving intervals:', error);
-                alert('Error saving intervals. Please try again.');
+                alert('Error saving changes: ' + error.message);
             });
         }
         
-        function resetIntervals() {
-            if (confirm('Reset intervals to last saved values?')) {
-                loadIntervals();
-            }
-        }
-        
-        function updateIntervalsStatus() {
-            fetch(`/api/user/{{ user.id }}/intervals/sync-status`)
+        function saveIntervals(showAlert = true) {
+            return new Promise((resolve, reject) => {
+                const intervalData = {};
+                
+                for (let day = 1; day <= 7; day++) {
+                    const enabled = document.getElementById(`interval-${day}`).checked;
+                    const startHour = parseInt(document.getElementById(`start-${day}`).value);
+                    const endHour = parseInt(document.getElementById(`end-${day}`).value);
+                    
+                    if (enabled && startHour >= endHour) {
+                        const error = `Invalid time range for day ${day}: start time must be before end time`;
+                        if (showAlert) alert(error);
+                        reject(new Error(error));
+                        return;
+                    }
+                    
+                    intervalData[day] = {
+                        is_enabled: enabled,
+                        start_hour: startHour,
+                        start_minute: 0,
+                        end_hour: endHour,
+                        end_minute: 0
+                    };
+                }
+                
+                fetch(`/api/user/{{ user.id }}/intervals/update`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ intervals: intervalData })
+                })
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
-                        const statusElement = document.getElementById('intervals-sync-status');
-                        
-                        if (data.needs_sync) {
-                            statusElement.className = 'sync-status unsynced';
-                            statusElement.innerHTML = '⚠ Intervals Not Synced';
-                            statusElement.title = 'Time intervals not yet synced to remote system';
-                        } else if (data.enabled_intervals > 0) {
-                            statusElement.className = 'sync-status synced';
-                            statusElement.innerHTML = '✓ Intervals Synced';
-                            statusElement.title = 'Time intervals synchronized with remote system';
-                        } else {
-                            statusElement.className = 'sync-status neutral';
-                            statusElement.innerHTML = 'No Intervals Set';
-                            statusElement.title = 'No time intervals configured';
+                        if (showAlert) {
+                            alert('Time intervals saved successfully!');
+                            loadIntervals();
                         }
+                        resolve();
+                    } else {
+                        const error = 'Error: ' + data.message;
+                        if (showAlert) alert(error);
+                        reject(new Error(data.message));
                     }
                 })
                 .catch(error => {
-                    console.error('Error fetching intervals sync status:', error);
+                    const errorMsg = 'Network error: ' + error.message;
+                    if (showAlert) alert(errorMsg);
+                    reject(error);
                 });
+            });
+        }
+        
+        function resetForm() {
+            if (confirm('Reset to last saved values?')) {
+                location.reload();
+            }
         }
     </script>
 </body>
