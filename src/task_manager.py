@@ -6,7 +6,7 @@ import logging
 import json
 import traceback
 
-from src.database import db, ManagedUser, UserTimeUsage, Settings, UserWeeklySchedule
+from src.database import db, ManagedUser, UserTimeUsage, Settings, UserWeeklySchedule, UserDailyTimeInterval
 from src.ssh_helper import SSHClient
 
 logger = logging.getLogger(__name__)
@@ -161,6 +161,34 @@ class BackgroundTaskManager:
                             logger.info(f"Weekly schedule already synced for {user.username}")
                         else:
                             logger.info(f"No weekly schedule configured for {user.username}")
+                    
+                    # Check if there are pending time interval syncs
+                    unsynced_intervals = UserDailyTimeInterval.query.filter_by(
+                        user_id=user.id,
+                        is_synced=False
+                    ).all()
+                    
+                    if unsynced_intervals:
+                        logger.info(f"Attempting to sync {len(unsynced_intervals)} time intervals for {user.username}")
+                        
+                        # Build intervals dict for SSH command
+                        intervals_dict = {}
+                        for interval in user.time_intervals:
+                            intervals_dict[interval.day_of_week] = interval
+                        
+                        success, message = ssh_client.set_allowed_hours(user.username, intervals_dict)
+                        
+                        if success:
+                            logger.info(f"Successfully synced time intervals for {user.username}")
+                            # Mark all intervals as synced
+                            for interval in unsynced_intervals:
+                                interval.mark_synced()
+                            db.session.commit()
+                            logger.info("Marked time intervals as synced in database")
+                        else:
+                            logger.warning(f"Failed to sync time intervals for {user.username}: {message}")
+                    else:
+                        logger.info(f"No pending time interval syncs for {user.username}")
                     
                     # Then update user info
                     logger.info("Validating user %s", user.username)

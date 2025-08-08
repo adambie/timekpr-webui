@@ -1298,3 +1298,267 @@ label {
         gap: 12px;
     }
 }
+
+/* Time Intervals Styles */
+.intervals-form-container {
+    background-color: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-top: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
+}
+
+.intervals-header {
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+.intervals-header h3 {
+    color: #2c3e50;
+    font-size: 1.4rem;
+    margin-bottom: 10px;
+}
+
+.intervals-description {
+    margin-bottom: 15px;
+}
+
+.intervals-description p {
+    color: #6c757d;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.interval-sync-status {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.interval-quick-controls {
+    background-color: #f8f9fa;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 25px;
+    border: 1px solid #dee2e6;
+}
+
+.interval-quick-controls label {
+    display: block;
+    text-align: center;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 15px;
+}
+
+.time-range-input-group {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.time-select {
+    padding: 8px 12px;
+    border: 2px solid #ced4da;
+    border-radius: 6px;
+    font-size: 1rem;
+    background-color: white;
+    min-width: 60px;
+    text-align: center;
+}
+
+.time-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.time-select:disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.time-separator {
+    font-weight: bold;
+    color: #495057;
+    margin: 0 5px;
+}
+
+.bulk-interval-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.intervals-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.interval-day {
+    background-color: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    transition: border-color 0.2s;
+}
+
+.interval-day:hover {
+    border-color: #007bff;
+}
+
+.interval-day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.day-label {
+    font-weight: 600;
+    color: #495057;
+    font-size: 1.1rem;
+    min-width: 100px;
+}
+
+.interval-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.interval-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.checkbox-label {
+    font-size: 0.95rem;
+    color: #495057;
+    cursor: pointer;
+    margin: 0;
+}
+
+.interval-time-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.time-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.intervals-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.intervals-actions .btn {
+    min-height: 50px;
+    padding: 15px 30px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 10px;
+}
+
+/* Mobile responsive for intervals */
+@media (max-width: 768px) {
+    .intervals-form-container {
+        padding: 20px;
+        margin-top: 20px;
+    }
+    
+    .interval-quick-controls {
+        padding: 15px;
+    }
+    
+    .time-range-input-group {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .bulk-interval-buttons {
+        flex-direction: column;
+    }
+    
+    .interval-day {
+        padding: 15px;
+    }
+    
+    .interval-day-header {
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: center;
+        width: 100%;
+    }
+    
+    .day-label {
+        min-width: auto;
+        width: 100%;
+        text-align: center;
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+    
+    .interval-toggle {
+        justify-content: center;
+        width: 100%;
+        font-size: 1.1rem;
+    }
+    
+    .interval-checkbox {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .interval-time-controls {
+        flex-direction: column;
+        gap: 10px;
+        width: 100%;
+    }
+    
+    .time-input-wrapper {
+        justify-content: center;
+        gap: 8px;
+    }
+    
+    .time-select {
+        min-width: 70px;
+        padding: 12px 16px;
+        font-size: 1.1rem;
+    }
+    
+    .time-separator {
+        font-size: 1.2rem;
+        margin: 0 10px;
+    }
+    
+    .intervals-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .intervals-actions .btn {
+        width: 100%;
+        min-height: 60px;
+        font-size: 1.2rem;
+    }
+}

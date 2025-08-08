@@ -252,3 +252,120 @@ class SSHClient:
                 client.close()
             except:
                 pass
+    
+    def set_allowed_hours(self, username, intervals_dict):
+        """
+        Set allowed hours for a user using timekpra --setallowedhours command
+        intervals_dict should contain day_of_week (1-7) keys with UserDailyTimeInterval objects
+        
+        Returns: (success, message)
+        """
+        import logging
+        logger = logging.getLogger(__name__)
+        
+        try:
+            client = paramiko.SSHClient()
+            client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            client.connect(
+                hostname=self.hostname,
+                username=self.username,
+                password=self.password,
+                port=self.port,
+                timeout=10
+            )
+            
+            # Process intervals for each day
+            day_order = [1, 2, 3, 4, 5, 6, 7]  # Monday to Sunday
+            day_names = ['', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+            
+            success_count = 0
+            error_messages = []
+            
+            for day_num in day_order:
+                day_name = day_names[day_num]
+                interval = intervals_dict.get(day_num)
+                
+                if interval and interval.is_enabled and interval.is_valid_interval():
+                    # Convert interval to timekpr format
+                    hour_specs = interval.to_timekpr_format()
+                    
+                    if hour_specs:
+                        hour_string = ';'.join(hour_specs)
+                        
+                        # Try setting allowed hours for this specific day
+                        hours_command = f'timekpra --setallowedhours {username} {day_num} \'{hour_string}\''
+                        logger.info(f"Setting allowed hours for {day_name}: {hours_command}")
+                        
+                        stdin, stdout, stderr = client.exec_command(hours_command)
+                        exit_status = stdout.channel.recv_exit_status()
+                        output = stdout.read().decode('utf-8')
+                        error = stderr.read().decode('utf-8')
+                        
+                        logger.info(f"Set allowed hours for {day_name} - exit status: {exit_status}, output: {output}, error: {error}")
+                        
+                        if exit_status != 0:
+                            # Try with sudo
+                            logger.info(f"Trying with sudo for {day_name}...")
+                            hours_command = f'sudo timekpra --setallowedhours {username} {day_num} \'{hour_string}\''
+                            logger.info(f"Setting allowed hours with sudo: {hours_command}")
+                            
+                            stdin, stdout, stderr = client.exec_command(hours_command)
+                            exit_status = stdout.channel.recv_exit_status()
+                            output = stdout.read().decode('utf-8')
+                            error = stderr.read().decode('utf-8')
+                            
+                            logger.info(f"Set allowed hours with sudo for {day_name} - exit status: {exit_status}, output: {output}, error: {error}")
+                            
+                            if exit_status != 0:
+                                error_messages.append(f"{day_name}: {error if error else output}")
+                                continue
+                        
+                        success_count += 1
+                        logger.info(f"Successfully set allowed hours for {day_name}: {hour_string}")
+                else:
+                    # Clear allowed hours for this day (no interval or disabled)
+                    logger.info(f"Clearing allowed hours for {day_name} (no interval or disabled)")
+                    
+                    # Set full day access (0-23 hours) when interval is disabled
+                    # This allows unlimited access within the daily time limits
+                    full_day_hours = ';'.join([str(h) for h in range(24)])
+                    hours_command = f'timekpra --setallowedhours {username} {day_num} \'{full_day_hours}\''
+                    
+                    stdin, stdout, stderr = client.exec_command(hours_command)
+                    exit_status = stdout.channel.recv_exit_status()
+                    output = stdout.read().decode('utf-8')
+                    error = stderr.read().decode('utf-8')
+                    
+                    logger.info(f"Set full day access for {day_name} - exit status: {exit_status}, output: {output}, error: {error}")
+                    
+                    if exit_status != 0:
+                        # Try with sudo
+                        logger.info(f"Trying full day access with sudo for {day_name}...")
+                        hours_command = f'sudo timekpra --setallowedhours {username} {day_num} \'{full_day_hours}\''
+                        stdin, stdout, stderr = client.exec_command(hours_command)
+                        exit_status = stdout.channel.recv_exit_status()
+                        output = stdout.read().decode('utf-8')
+                        error = stderr.read().decode('utf-8')
+                        
+                        logger.info(f"Set full day access with sudo for {day_name} - exit status: {exit_status}, output: {output}, error: {error}")
+                        
+                        if exit_status != 0:
+                            error_messages.append(f"{day_name}: Failed to set full day access - {error if error else output}")
+                            continue
+                    
+                    logger.info(f"Successfully set full day access for {day_name}")
+                    success_count += 1  # Count disabled days as successful too
+            
+            if success_count > 0 or not error_messages:
+                return True, f"Successfully configured allowed hours for {username}. Days configured: {success_count}/7"
+            else:
+                return False, f"Failed to configure allowed hours: {'; '.join(error_messages)}"
+            
+        except Exception as e:
+            logger.error(f"Exception in set_allowed_hours: {str(e)}")
+            return False, f"Connection error: {str(e)}"
+        finally:
+            try:
+                client.close()
+            except:
+                pass

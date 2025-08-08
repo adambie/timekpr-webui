@@ -159,3 +159,99 @@ class UserWeeklySchedule(db.Model):
         """Mark the schedule as synced with the remote system"""
         self.is_synced = True
         self.last_synced = datetime.utcnow()
+
+class UserDailyTimeInterval(db.Model):
+    __tablename__ = 'user_daily_time_interval'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('managed_user.id'), nullable=False)
+    
+    # Day of week (1=Monday, 7=Sunday, matching ISO 8601)
+    day_of_week = db.Column(db.Integer, nullable=False)  # 1-7
+    
+    # Time interval (24-hour format)
+    start_hour = db.Column(db.Integer, nullable=False)   # 0-23
+    start_minute = db.Column(db.Integer, default=0)      # 0-59
+    end_hour = db.Column(db.Integer, nullable=False)     # 0-23
+    end_minute = db.Column(db.Integer, default=0)        # 0-59
+    
+    # Whether this interval is enabled
+    is_enabled = db.Column(db.Boolean, default=True)
+    
+    # Sync status and timestamps
+    is_synced = db.Column(db.Boolean, default=False)
+    last_synced = db.Column(db.DateTime, nullable=True)
+    last_modified = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationship back to user
+    user = db.relationship('ManagedUser', backref='time_intervals')
+    
+    # Constraint to ensure only one interval per user per day
+    __table_args__ = (
+        db.UniqueConstraint('user_id', 'day_of_week', name='user_day_interval_uc'),
+    )
+    
+    def __repr__(self):
+        return f'<UserDailyTimeInterval {self.user.username} Day{self.day_of_week} {self.start_hour:02d}:{self.start_minute:02d}-{self.end_hour:02d}:{self.end_minute:02d}>'
+    
+    def get_time_range_string(self):
+        """Get formatted time range string (e.g., '09:00-17:30')"""
+        return f"{self.start_hour:02d}:{self.start_minute:02d}-{self.end_hour:02d}:{self.end_minute:02d}"
+    
+    def get_day_name(self):
+        """Get day name from day_of_week number"""
+        days = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+        return days[self.day_of_week] if 1 <= self.day_of_week <= 7 else 'Unknown'
+    
+    def is_valid_interval(self):
+        """Check if the time interval is valid (start < end, within 24h)"""
+        start_minutes = self.start_hour * 60 + self.start_minute
+        end_minutes = self.end_hour * 60 + self.end_minute
+        return start_minutes < end_minutes and 0 <= start_minutes < 1440 and 0 <= end_minutes < 1440
+    
+    def mark_synced(self):
+        """Mark the interval as synced with the remote system"""
+        self.is_synced = True
+        self.last_synced = datetime.utcnow()
+    
+    def mark_modified(self):
+        """Mark the interval as modified (needs sync)"""
+        self.is_synced = False
+        self.last_modified = datetime.utcnow()
+    
+    def to_timekpr_format(self):
+        """Convert interval to timekpr hour specification format"""
+        if not self.is_enabled:
+            return None
+        
+        # If full hour intervals, just return the hour numbers
+        if self.start_minute == 0 and self.end_minute == 0:
+            hours = list(range(self.start_hour, self.end_hour))
+            return [str(h) for h in hours]
+        
+        # If partial hours, include minute specifications
+        result = []
+        current_hour = self.start_hour
+        
+        # First hour (potentially partial)
+        if current_hour == self.end_hour:
+            # Same hour, use minute range
+            result.append(f"{current_hour}[{self.start_minute}-{self.end_minute}]")
+        else:
+            # Multiple hours
+            if self.start_minute == 0:
+                result.append(str(current_hour))
+            else:
+                result.append(f"{current_hour}[{self.start_minute}-59]")
+            
+            current_hour += 1
+            
+            # Full hours in between
+            while current_hour < self.end_hour:
+                result.append(str(current_hour))
+                current_hour += 1
+            
+            # Last hour (potentially partial)
+            if self.end_minute > 0:
+                result.append(f"{self.end_hour}[0-{self.end_minute}]")
+        
+        return result

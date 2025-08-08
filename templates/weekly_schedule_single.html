@@ -234,9 +234,354 @@
                         <button type="submit" class="btn btn-confirm">Save Schedule</button>
                         <button type="button" class="btn btn-cancel" onclick="resetScheduleForm()">Reset</button>
                     </div>
+                </form>
+                
+                <!-- Time Intervals Section -->
+                <div class="intervals-form-container">
+                    <div class="intervals-header">
+                        <h3>Allowed Time Intervals (when computer can be used)</h3>
+                        <div class="intervals-description">
+                            <p>Set specific time periods when the user can access their computer. This works together with the daily time limits above.</p>
+                        </div>
+                        <div class="interval-sync-status">
+                            <div id="intervals-sync-status" class="sync-status neutral">
+                                Loading intervals...
+                            </div>
+                        </div>
+                    </div>
                     
-                    {% if user.weekly_schedule %}
-                        <div class="schedule-info">
+                    <div class="interval-quick-controls">
+                        <label>Quick Set Interval:</label>
+                        <div class="time-range-input-group">
+                            <select id="bulk-start-hour" class="time-select">
+                                {% for h in range(24) %}
+                                <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ '%02d'|format(h) }}</option>
+                                {% endfor %}
+                            </select>
+                            <span>:</span>
+                            <select id="bulk-start-minute" class="time-select">
+                                <option value="0" selected>00</option>
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="45">45</option>
+                            </select>
+                            <span class="time-separator">to</span>
+                            <select id="bulk-end-hour" class="time-select">
+                                {% for h in range(24) %}
+                                <option value="{{ h }}" {% if h == 17 %}selected{% endif %}>{{ '%02d'|format(h) }}</option>
+                                {% endfor %}
+                            </select>
+                            <span>:</span>
+                            <select id="bulk-end-minute" class="time-select">
+                                <option value="0" selected>00</option>
+                                <option value="15">15</option>
+                                <option value="30">30</option>
+                                <option value="45">45</option>
+                            </select>
+                        </div>
+                        <div class="bulk-interval-buttons">
+                            <button type="button" class="btn btn-mobile btn-set-weekdays" onclick="setWeekdayIntervals()">Apply to Weekdays</button>
+                            <button type="button" class="btn btn-mobile btn-set-all" onclick="setAllDayIntervals()">Apply to All Days</button>
+                        </div>
+                    </div>
+                    
+                    <div class="intervals-grid">
+                        <div class="interval-day" data-day="1">
+                            <div class="interval-day-header">
+                                <label class="day-label">Monday:</label>
+                                <div class="interval-toggle">
+                                    <input type="checkbox" id="interval-enabled-1" class="interval-checkbox">
+                                    <label for="interval-enabled-1" class="checkbox-label">Enable</label>
+                                </div>
+                            </div>
+                            <div class="interval-time-controls">
+                                <div class="time-input-wrapper">
+                                    <select id="interval-start-hour-1" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-start-minute-1" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                                <span class="time-separator">to</span>
+                                <div class="time-input-wrapper">
+                                    <select id="interval-end-hour-1" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-end-minute-1" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="interval-day" data-day="2">
+                            <div class="interval-day-header">
+                                <label class="day-label">Tuesday:</label>
+                                <div class="interval-toggle">
+                                    <input type="checkbox" id="interval-enabled-2" class="interval-checkbox">
+                                    <label for="interval-enabled-2" class="checkbox-label">Enable</label>
+                                </div>
+                            </div>
+                            <div class="interval-time-controls">
+                                <div class="time-input-wrapper">
+                                    <select id="interval-start-hour-2" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-start-minute-2" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                                <span class="time-separator">to</span>
+                                <div class="time-input-wrapper">
+                                    <select id="interval-end-hour-2" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-end-minute-2" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="interval-day" data-day="3">
+                            <div class="interval-day-header">
+                                <label class="day-label">Wednesday:</label>
+                                <div class="interval-toggle">
+                                    <input type="checkbox" id="interval-enabled-3" class="interval-checkbox">
+                                    <label for="interval-enabled-3" class="checkbox-label">Enable</label>
+                                </div>
+                            </div>
+                            <div class="interval-time-controls">
+                                <div class="time-input-wrapper">
+                                    <select id="interval-start-hour-3" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-start-minute-3" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                                <span class="time-separator">to</span>
+                                <div class="time-input-wrapper">
+                                    <select id="interval-end-hour-3" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-end-minute-3" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="interval-day" data-day="4">
+                            <div class="interval-day-header">
+                                <label class="day-label">Thursday:</label>
+                                <div class="interval-toggle">
+                                    <input type="checkbox" id="interval-enabled-4" class="interval-checkbox">
+                                    <label for="interval-enabled-4" class="checkbox-label">Enable</label>
+                                </div>
+                            </div>
+                            <div class="interval-time-controls">
+                                <div class="time-input-wrapper">
+                                    <select id="interval-start-hour-4" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-start-minute-4" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                                <span class="time-separator">to</span>
+                                <div class="time-input-wrapper">
+                                    <select id="interval-end-hour-4" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-end-minute-4" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="interval-day" data-day="5">
+                            <div class="interval-day-header">
+                                <label class="day-label">Friday:</label>
+                                <div class="interval-toggle">
+                                    <input type="checkbox" id="interval-enabled-5" class="interval-checkbox">
+                                    <label for="interval-enabled-5" class="checkbox-label">Enable</label>
+                                </div>
+                            </div>
+                            <div class="interval-time-controls">
+                                <div class="time-input-wrapper">
+                                    <select id="interval-start-hour-5" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-start-minute-5" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                                <span class="time-separator">to</span>
+                                <div class="time-input-wrapper">
+                                    <select id="interval-end-hour-5" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-end-minute-5" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="interval-day" data-day="6">
+                            <div class="interval-day-header">
+                                <label class="day-label">Saturday:</label>
+                                <div class="interval-toggle">
+                                    <input type="checkbox" id="interval-enabled-6" class="interval-checkbox">
+                                    <label for="interval-enabled-6" class="checkbox-label">Enable</label>
+                                </div>
+                            </div>
+                            <div class="interval-time-controls">
+                                <div class="time-input-wrapper">
+                                    <select id="interval-start-hour-6" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-start-minute-6" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                                <span class="time-separator">to</span>
+                                <div class="time-input-wrapper">
+                                    <select id="interval-end-hour-6" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-end-minute-6" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="interval-day" data-day="7">
+                            <div class="interval-day-header">
+                                <label class="day-label">Sunday:</label>
+                                <div class="interval-toggle">
+                                    <input type="checkbox" id="interval-enabled-7" class="interval-checkbox">
+                                    <label for="interval-enabled-7" class="checkbox-label">Enable</label>
+                                </div>
+                            </div>
+                            <div class="interval-time-controls">
+                                <div class="time-input-wrapper">
+                                    <select id="interval-start-hour-7" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-start-minute-7" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                                <span class="time-separator">to</span>
+                                <div class="time-input-wrapper">
+                                    <select id="interval-end-hour-7" class="time-select" disabled>
+                                        {% for h in range(24) %}
+                                        <option value="{{ h }}">{{ '%02d'|format(h) }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <span>:</span>
+                                    <select id="interval-end-minute-7" class="time-select" disabled>
+                                        <option value="0">00</option>
+                                        <option value="15">15</option>
+                                        <option value="30">30</option>
+                                        <option value="45">45</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="intervals-actions">
+                        <button type="button" class="btn btn-confirm" onclick="saveIntervals()">Save Time Intervals</button>
+                        <button type="button" class="btn btn-cancel" onclick="resetIntervals()">Reset</button>
+                    </div>
+                </div>
+                
+                {% if user.weekly_schedule %}
+                    <div class="schedule-info">
                             <div class="info-item">
                                 <span class="info-label">Last Modified:</span>
                                 <span class="info-value">
@@ -400,7 +745,205 @@
             // Start checking sync status every 5 seconds
             updateSyncStatus();
             setInterval(updateSyncStatus, 5000);
+            
+            // Load and setup intervals
+            loadIntervals();
+            setupIntervalEventHandlers();
+            
+            // Check interval sync status periodically
+            updateIntervalsStatus();
+            setInterval(updateIntervalsStatus, 5000);
         });
+        
+        // Time Intervals Functions
+        let currentIntervals = {};
+        
+        function loadIntervals() {
+            fetch(`/api/user/{{ user.id }}/intervals`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        currentIntervals = data.intervals;
+                        populateIntervalForm(data.intervals);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading intervals:', error);
+                });
+        }
+        
+        function populateIntervalForm(intervals) {
+            for (let day = 1; day <= 7; day++) {
+                const interval = intervals[day];
+                const enabled = interval ? interval.is_enabled : false;
+                
+                // Set checkbox state
+                document.getElementById(`interval-enabled-${day}`).checked = enabled;
+                
+                // Set time values or defaults
+                const startHour = interval ? interval.start_hour : 9;
+                const startMinute = interval ? interval.start_minute : 0;
+                const endHour = interval ? interval.end_hour : 17;
+                const endMinute = interval ? interval.end_minute : 0;
+                
+                document.getElementById(`interval-start-hour-${day}`).value = startHour;
+                document.getElementById(`interval-start-minute-${day}`).value = startMinute;
+                document.getElementById(`interval-end-hour-${day}`).value = endHour;
+                document.getElementById(`interval-end-minute-${day}`).value = endMinute;
+                
+                // Enable/disable time inputs based on checkbox
+                toggleIntervalInputs(day, enabled);
+            }
+        }
+        
+        function setupIntervalEventHandlers() {
+            // Setup checkbox change handlers
+            for (let day = 1; day <= 7; day++) {
+                const checkbox = document.getElementById(`interval-enabled-${day}`);
+                checkbox.addEventListener('change', function() {
+                    toggleIntervalInputs(day, this.checked);
+                });
+            }
+        }
+        
+        function toggleIntervalInputs(day, enabled) {
+            document.getElementById(`interval-start-hour-${day}`).disabled = !enabled;
+            document.getElementById(`interval-start-minute-${day}`).disabled = !enabled;
+            document.getElementById(`interval-end-hour-${day}`).disabled = !enabled;
+            document.getElementById(`interval-end-minute-${day}`).disabled = !enabled;
+        }
+        
+        function setWeekdayIntervals() {
+            const startHour = document.getElementById('bulk-start-hour').value;
+            const startMinute = document.getElementById('bulk-start-minute').value;
+            const endHour = document.getElementById('bulk-end-hour').value;
+            const endMinute = document.getElementById('bulk-end-minute').value;
+            
+            if (!startHour || !endHour) {
+                alert('Please set the time range first');
+                return;
+            }
+            
+            // Apply to weekdays (Monday = 1 to Friday = 5)
+            for (let day = 1; day <= 5; day++) {
+                document.getElementById(`interval-enabled-${day}`).checked = true;
+                document.getElementById(`interval-start-hour-${day}`).value = startHour;
+                document.getElementById(`interval-start-minute-${day}`).value = startMinute;
+                document.getElementById(`interval-end-hour-${day}`).value = endHour;
+                document.getElementById(`interval-end-minute-${day}`).value = endMinute;
+                toggleIntervalInputs(day, true);
+            }
+        }
+        
+        function setAllDayIntervals() {
+            const startHour = document.getElementById('bulk-start-hour').value;
+            const startMinute = document.getElementById('bulk-start-minute').value;
+            const endHour = document.getElementById('bulk-end-hour').value;
+            const endMinute = document.getElementById('bulk-end-minute').value;
+            
+            if (!startHour || !endHour) {
+                alert('Please set the time range first');
+                return;
+            }
+            
+            // Apply to all days
+            for (let day = 1; day <= 7; day++) {
+                document.getElementById(`interval-enabled-${day}`).checked = true;
+                document.getElementById(`interval-start-hour-${day}`).value = startHour;
+                document.getElementById(`interval-start-minute-${day}`).value = startMinute;
+                document.getElementById(`interval-end-hour-${day}`).value = endHour;
+                document.getElementById(`interval-end-minute-${day}`).value = endMinute;
+                toggleIntervalInputs(day, true);
+            }
+        }
+        
+        function saveIntervals() {
+            const intervals = {};
+            
+            for (let day = 1; day <= 7; day++) {
+                const enabled = document.getElementById(`interval-enabled-${day}`).checked;
+                const startHour = parseInt(document.getElementById(`interval-start-hour-${day}`).value);
+                const startMinute = parseInt(document.getElementById(`interval-start-minute-${day}`).value);
+                const endHour = parseInt(document.getElementById(`interval-end-hour-${day}`).value);
+                const endMinute = parseInt(document.getElementById(`interval-end-minute-${day}`).value);
+                
+                intervals[day] = {
+                    is_enabled: enabled,
+                    start_hour: startHour,
+                    start_minute: startMinute,
+                    end_hour: endHour,
+                    end_minute: endMinute
+                };
+                
+                // Validate time range if enabled
+                if (enabled) {
+                    const startMinutes = startHour * 60 + startMinute;
+                    const endMinutes = endHour * 60 + endMinute;
+                    
+                    if (startMinutes >= endMinutes) {
+                        const dayNames = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                        alert(`Invalid time range for ${dayNames[day]}: start time must be before end time`);
+                        return;
+                    }
+                }
+            }
+            
+            // Save intervals via API
+            fetch(`/api/user/{{ user.id }}/intervals/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ intervals: intervals })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Time intervals saved successfully!');
+                    loadIntervals(); // Reload to get updated sync status
+                    updateIntervalsStatus();
+                } else {
+                    alert('Error saving intervals: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error saving intervals:', error);
+                alert('Error saving intervals. Please try again.');
+            });
+        }
+        
+        function resetIntervals() {
+            if (confirm('Reset intervals to last saved values?')) {
+                loadIntervals();
+            }
+        }
+        
+        function updateIntervalsStatus() {
+            fetch(`/api/user/{{ user.id }}/intervals/sync-status`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const statusElement = document.getElementById('intervals-sync-status');
+                        
+                        if (data.needs_sync) {
+                            statusElement.className = 'sync-status unsynced';
+                            statusElement.innerHTML = '⚠ Intervals Not Synced';
+                            statusElement.title = 'Time intervals not yet synced to remote system';
+                        } else if (data.enabled_intervals > 0) {
+                            statusElement.className = 'sync-status synced';
+                            statusElement.innerHTML = '✓ Intervals Synced';
+                            statusElement.title = 'Time intervals synchronized with remote system';
+                        } else {
+                            statusElement.className = 'sync-status neutral';
+                            statusElement.innerHTML = 'No Intervals Set';
+                            statusElement.title = 'No time intervals configured';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching intervals sync status:', error);
+                });
+        }
     </script>
 </body>
 </html>

@@ -4,7 +4,7 @@ from datetime import datetime, date, timedelta
 import json
 import logging
 
-from src.database import db, ManagedUser, UserTimeUsage, Settings, UserWeeklySchedule
+from src.database import db, ManagedUser, UserTimeUsage, Settings, UserWeeklySchedule, UserDailyTimeInterval
 from src.ssh_helper import SSHClient
 from src.task_manager import BackgroundTaskManager
 
@@ -393,6 +393,147 @@ def update_weekly_schedule():
         flash(f'Error updating schedule: {str(e)}', 'danger')
     
     return redirect(url_for('weekly_schedule_user', user_id=user.id))
+
+@app.route('/api/user/<int:user_id>/intervals')
+def get_user_intervals(user_id):
+    """API endpoint to get user time intervals"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+    
+    user = ManagedUser.query.get_or_404(user_id)
+    
+    # Get all intervals for this user
+    intervals = UserDailyTimeInterval.query.filter_by(user_id=user.id).all()
+    
+    # Format intervals by day
+    intervals_dict = {}
+    for interval in intervals:
+        intervals_dict[interval.day_of_week] = {
+            'id': interval.id,
+            'day_name': interval.get_day_name(),
+            'start_hour': interval.start_hour,
+            'start_minute': interval.start_minute,
+            'end_hour': interval.end_hour,
+            'end_minute': interval.end_minute,
+            'is_enabled': interval.is_enabled,
+            'is_synced': interval.is_synced,
+            'time_range': interval.get_time_range_string(),
+            'last_synced': interval.last_synced.strftime('%Y-%m-%d %H:%M') if interval.last_synced else None
+        }
+    
+    return jsonify({
+        'success': True,
+        'intervals': intervals_dict,
+        'username': user.username
+    })
+
+@app.route('/api/user/<int:user_id>/intervals/update', methods=['POST'])
+def update_user_intervals(user_id):
+    """API endpoint to update user time intervals"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+    
+    user = ManagedUser.query.get_or_404(user_id)
+    
+    try:
+        # Get interval data from request
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        intervals_data = data.get('intervals', {})
+        
+        for day_str, interval_data in intervals_data.items():
+            try:
+                day_of_week = int(day_str)
+                if not (1 <= day_of_week <= 7):
+                    continue
+                
+                # Get or create interval for this day
+                interval = UserDailyTimeInterval.query.filter_by(
+                    user_id=user.id,
+                    day_of_week=day_of_week
+                ).first()
+                
+                if not interval:
+                    interval = UserDailyTimeInterval(
+                        user_id=user.id,
+                        day_of_week=day_of_week
+                    )
+                    db.session.add(interval)
+                
+                # Update interval properties
+                interval.start_hour = int(interval_data.get('start_hour', 9))
+                interval.start_minute = int(interval_data.get('start_minute', 0))
+                interval.end_hour = int(interval_data.get('end_hour', 17))
+                interval.end_minute = int(interval_data.get('end_minute', 0))
+                interval.is_enabled = bool(interval_data.get('is_enabled', False))
+                
+                # Validate the interval
+                if not interval.is_valid_interval():
+                    return jsonify({
+                        'success': False,
+                        'message': f'Invalid time interval for {interval.get_day_name()}: start time must be before end time'
+                    }), 400
+                
+                # Mark as modified (needs sync)
+                interval.mark_modified()
+                
+            except (ValueError, KeyError) as e:
+                return jsonify({
+                    'success': False,
+                    'message': f'Invalid data format: {str(e)}'
+                }), 400
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Time intervals updated for {user.username}',
+            'username': user.username
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': f'Error updating intervals: {str(e)}'
+        }), 500
+
+@app.route('/api/user/<int:user_id>/intervals/sync-status')
+def get_intervals_sync_status(user_id):
+    """Get sync status of user's time intervals"""
+    if not session.get('logged_in'):
+        return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+    
+    user = ManagedUser.query.get_or_404(user_id)
+    
+    # Get all intervals for this user
+    intervals = UserDailyTimeInterval.query.filter_by(user_id=user.id).all()
+    
+    # Check if any intervals need sync
+    needs_sync = any(not interval.is_synced for interval in intervals)
+    
+    # Get last sync time (most recent among all intervals)
+    last_synced = None
+    if intervals:
+        synced_intervals = [i for i in intervals if i.last_synced]
+        if synced_intervals:
+            last_synced = max(i.last_synced for i in synced_intervals)
+            last_synced = last_synced.strftime('%Y-%m-%d %H:%M')
+    
+    # Count enabled vs total intervals
+    enabled_count = sum(1 for i in intervals if i.is_enabled)
+    total_count = len(intervals)
+    
+    return jsonify({
+        'success': True,
+        'needs_sync': needs_sync,
+        'last_synced': last_synced,
+        'enabled_intervals': enabled_count,
+        'total_intervals': total_count,
+        'username': user.username
+    })
 
 @app.route('/api/schedule-sync-status/<int:user_id>')
 def get_schedule_sync_status(user_id):
