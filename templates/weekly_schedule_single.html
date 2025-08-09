@@ -295,21 +295,12 @@
                         <p style="margin: 0; color: var(--text-secondary); font-family: monospace;">{{ user.system_ip }}</p>
                     </div>
                     <div class="status-info">
-                        {% if user.weekly_schedule and not user.weekly_schedule.is_synced %}
-                            <div class="badge badge-warning">
-                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                                </svg>
-                                Changes Pending Sync
-                            </div>
-                        {% elif user.weekly_schedule and user.weekly_schedule.is_synced %}
-                            <div class="badge badge-success">
-                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
-                                </svg>
-                                Synchronized
-                            </div>
-                        {% endif %}
+                        <div id="sync-status-badge" class="badge" style="display: none;">
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
+                                <path id="sync-status-icon" d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                            </svg>
+                            <span id="sync-status-text">Changes Pending Sync</span>
+                        </div>
                     </div>
                 </div>
                 
@@ -453,7 +444,96 @@
         </div>
     </div>
     
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="notification-toast">
+        <div class="toast-content">
+            <svg class="toast-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+            </svg>
+            <span class="toast-message">Changes saved successfully!</span>
+        </div>
+    </div>
+    
+    <style>
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateX(calc(100% + 20px));
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .notification-toast.show {
+            transform: translateX(0);
+        }
+        
+        .notification-toast.success {
+            border-left: 4px solid var(--success);
+        }
+        
+        .notification-toast.error {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+        
+        .toast-icon {
+            flex-shrink: 0;
+        }
+        
+        .notification-toast.success .toast-icon {
+            color: var(--success);
+        }
+        
+        .notification-toast.error .toast-icon {
+            color: var(--danger);
+        }
+        
+        .toast-message {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+    </style>
+    
     <script>
+        // Notification functions
+        function showNotification(message, type = 'success') {
+            const toast = document.getElementById('notification-toast');
+            const messageEl = toast.querySelector('.toast-message');
+            const iconEl = toast.querySelector('.toast-icon path');
+            
+            // Set message
+            messageEl.textContent = message;
+            
+            // Set type and icon
+            toast.className = `notification-toast ${type}`;
+            if (type === 'success') {
+                iconEl.setAttribute('d', 'M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z');
+            } else if (type === 'error') {
+                iconEl.setAttribute('d', 'M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z');
+            }
+            
+            // Show toast
+            toast.classList.add('show');
+            
+            // Hide after 2 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+        
         // Intervals data
         let intervals = {};
         
@@ -589,14 +669,14 @@
                 }
             })
             .then(() => {
-                alert('All changes saved successfully!');
+                showNotification('All changes saved successfully!');
                 // Update status immediately instead of reloading
                 setTimeout(() => {
                     updateSyncStatus();
                 }, 1000);
             })
             .catch(error => {
-                alert('Error saving changes: ' + error.message);
+                showNotification('Error saving changes: ' + error.message, 'error');
             });
         }
         
@@ -611,7 +691,7 @@
                     
                     if (enabled && startHour >= endHour) {
                         const error = `Invalid time range for day ${day}: start time must be before end time`;
-                        if (showAlert) alert(error);
+                        if (showAlert) showNotification(error, 'error');
                         reject(new Error(error));
                         return;
                     }
@@ -634,19 +714,19 @@
                 .then(data => {
                     if (data.success) {
                         if (showAlert) {
-                            alert('Time intervals saved successfully!');
+                            showNotification('Time intervals saved successfully!');
                             loadIntervals();
                         }
                         resolve();
                     } else {
                         const error = 'Error: ' + data.message;
-                        if (showAlert) alert(error);
+                        if (showAlert) showNotification(error, 'error');
                         reject(new Error(data.message));
                     }
                 })
                 .catch(error => {
                     const errorMsg = 'Network error: ' + error.message;
-                    if (showAlert) alert(errorMsg);
+                    if (showAlert) showNotification(errorMsg, 'error');
                     reject(error);
                 });
             });
@@ -657,6 +737,43 @@
                 location.reload();
             }
         }
+        
+        // Function to update sync status
+        function updateSyncStatus() {
+            fetch('/api/schedule-sync-status/{{ user.id }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const statusBadge = document.getElementById('sync-status-badge');
+                        const statusIcon = document.getElementById('sync-status-icon');
+                        const statusText = document.getElementById('sync-status-text');
+                        
+                        if (!data.is_synced && data.schedule) {
+                            // Show "Changes Pending Sync" badge
+                            statusBadge.className = 'badge badge-warning';
+                            statusBadge.style.display = 'block';
+                            statusIcon.setAttribute('d', 'M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z');
+                            statusText.textContent = 'Changes Pending Sync';
+                        } else if (data.is_synced && data.schedule) {
+                            // Show "Synchronized" badge
+                            statusBadge.className = 'badge badge-success';
+                            statusBadge.style.display = 'block';
+                            statusIcon.setAttribute('d', 'M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z');
+                            statusText.textContent = 'Synchronized';
+                        } else {
+                            // Hide badge when no schedule
+                            statusBadge.style.display = 'none';
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching sync status:', error);
+                });
+        }
+        
+        // Update sync status immediately and then every 5 seconds
+        updateSyncStatus();
+        setInterval(updateSyncStatus, 5000);
     </script>
 </body>
 </html>

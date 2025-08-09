@@ -37,9 +37,12 @@ class BackgroundTaskManager:
         """Stop the background task manager"""
         logger.info("Stopping background task manager...")
         self.running = False
-        if self.thread:
-            self.thread.join(timeout=2)
-            logger.info("Thread joined: %s", not self.thread.is_alive())
+        if self.thread and self.thread.is_alive():
+            self.thread.join(timeout=5)
+            if self.thread.is_alive():
+                logger.warning("Thread did not stop gracefully within timeout")
+            else:
+                logger.info("Thread stopped successfully")
         logger.info("Background task manager stopped")
     
     def restart(self):

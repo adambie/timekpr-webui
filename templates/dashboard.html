@@ -16,7 +16,7 @@
                 <p class="dashboard-subtitle">Parental Control Management</p>
             </div>
             <div class="dashboard-controls">
-                <div class="task-status-container">
+                <div class="task-status-container" id="task-status-container" style="display: none;">
                     <span class="status-indicator" id="task-status-indicator">Unknown</span>
                     <a href="{{ url_for('restart_tasks') }}" class="btn btn-sm btn-secondary btn-icon" title="Restart Background Tasks">
                         <svg width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -38,36 +38,83 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
+                            const container = document.getElementById('task-status-container');
                             const indicator = document.getElementById('task-status-indicator');
                             const status = data.status;
                             
-                            if (status.running && status.thread_alive) {
-                                indicator.className = 'status-active';
-                                indicator.textContent = 'Active';
-                            } else {
-                                indicator.className = 'status-inactive';
-                                indicator.textContent = 'Inactive';
-                            }
+                            // Show container only if there are issues
+                            const hasIssues = !status.running || !status.thread_alive || status.last_error;
                             
-                            // Set tooltip to show last error if any
-                            if (status.last_error) {
-                                indicator.title = `Last error: ${status.last_error.message} at ${status.last_error.time}`;
+                            if (hasIssues) {
+                                container.style.display = 'flex';
+                                
+                                if (status.running && status.thread_alive) {
+                                    indicator.className = 'status-active';
+                                    indicator.textContent = 'Active';
+                                } else {
+                                    indicator.className = 'status-inactive';
+                                    indicator.textContent = 'Inactive';
+                                }
+                                
+                                // Set tooltip to show last error if any
+                                if (status.last_error) {
+                                    indicator.title = `Last error: ${status.last_error.message} at ${status.last_error.time}`;
+                                } else {
+                                    indicator.title = 'Background tasks are running normally';
+                                }
                             } else {
-                                indicator.title = 'Background tasks are running normally';
+                                // Hide container when everything is working fine
+                                container.style.display = 'none';
                             }
                         }
                     })
                     .catch(error => {
                         console.error('Error fetching task status:', error);
+                        const container = document.getElementById('task-status-container');
                         const indicator = document.getElementById('task-status-indicator');
+                        
+                        // Show container on API error
+                        container.style.display = 'flex';
                         indicator.className = 'status-error';
                         indicator.textContent = 'Error';
+                        indicator.title = 'Error connecting to background task status API';
                     });
             }
             
-            // Check status immediately and then every 30 seconds
+            // Function to update sync status for all users
+            function updateSyncStatus() {
+                {% for user in users %}
+                fetch('/api/schedule-sync-status/{{ user.id }}')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            const statusBadge = document.getElementById('sync-status-{{ user.id }}');
+                            const syncIcon = document.getElementById('sync-icon-{{ user.id }}');
+                            const syncText = document.getElementById('sync-text-{{ user.id }}');
+                            
+                            if (!data.is_synced && data.schedule) {
+                                // Show "Schedule Not Synced" badge
+                                statusBadge.className = 'badge badge-warning sync-status-badge';
+                                statusBadge.style.display = 'block';
+                                syncIcon.setAttribute('d', 'M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z');
+                                syncText.textContent = 'Schedule Not Synced';
+                            } else {
+                                // Hide badge when synced or no schedule
+                                statusBadge.style.display = 'none';
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching sync status for user {{ user.id }}:', error);
+                    });
+                {% endfor %}
+            }
+            
+            // Check status immediately and then every 5 seconds
             updateTaskStatus();
+            updateSyncStatus();
             setInterval(updateTaskStatus, 30000);
+            setInterval(updateSyncStatus, 5000);
         </script>
         
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -114,14 +161,12 @@
                                 Pending: {{ pending_adjustments[user.id|string] }}
                             </div>
                             {% endif %}
-                            {% if user.weekly_schedule and not user.weekly_schedule.is_synced %}
-                            <div class="badge badge-warning" style="margin-bottom: var(--space-4);">
+                            <div id="sync-status-{{ user.id }}" class="badge sync-status-badge" style="margin-bottom: var(--space-4); display: none;">
                                 <svg width="12" height="12" fill="currentColor" viewBox="0 0 16 16">
-                                    <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                    <path id="sync-icon-{{ user.id }}" d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
                                 </svg>
-                                Schedule Not Synced
+                                <span id="sync-text-{{ user.id }}">Schedule Not Synced</span>
                             </div>
-                            {% endif %}
                             
                             <div class="user-actions">
                                 <button class="btn btn-primary" onclick="openTimeAdjustModal({{ user.id }}, '{{ user.username }}')">Adjust Time</button>
@@ -205,6 +250,15 @@
                                     scales: {
                                         y: {
                                             beginAtZero: true,
+                                            title: {
+                                                display: true,
+                                                text: 'Hours',
+                                                color: 'rgb(100 116 139)',
+                                                font: {
+                                                    size: 12,
+                                                    weight: '500'
+                                                }
+                                            },
                                             grid: {
                                                 color: 'rgb(226 232 240 / 0.5)',
                                             },
@@ -315,7 +369,96 @@
         </div>
     </div>
     
+    <!-- Notification Toast -->
+    <div id="notification-toast" class="notification-toast">
+        <div class="toast-content">
+            <svg class="toast-icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+            </svg>
+            <span class="toast-message">Changes saved successfully!</span>
+        </div>
+    </div>
+    
+    <style>
+        .notification-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            transform: translateX(calc(100% + 20px));
+            transition: transform 0.3s ease-in-out;
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .notification-toast.show {
+            transform: translateX(0);
+        }
+        
+        .notification-toast.success {
+            border-left: 4px solid var(--success);
+        }
+        
+        .notification-toast.error {
+            border-left: 4px solid var(--danger);
+        }
+        
+        .toast-content {
+            display: flex;
+            align-items: center;
+            gap: var(--space-3);
+        }
+        
+        .toast-icon {
+            flex-shrink: 0;
+        }
+        
+        .notification-toast.success .toast-icon {
+            color: var(--success);
+        }
+        
+        .notification-toast.error .toast-icon {
+            color: var(--danger);
+        }
+        
+        .toast-message {
+            font-weight: 500;
+            color: var(--text-primary);
+            font-size: var(--font-size-sm);
+        }
+    </style>
+    
     <script>
+        // Notification functions
+        function showNotification(message, type = 'success') {
+            const toast = document.getElementById('notification-toast');
+            const messageEl = toast.querySelector('.toast-message');
+            const iconEl = toast.querySelector('.toast-icon path');
+            
+            // Set message
+            messageEl.textContent = message;
+            
+            // Set type and icon
+            toast.className = `notification-toast ${type}`;
+            if (type === 'success') {
+                iconEl.setAttribute('d', 'M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.061L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z');
+            } else if (type === 'error') {
+                iconEl.setAttribute('d', 'M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zM5.354 4.646a.5.5 0 1 0-.708.708L7.293 8l-2.647 2.646a.5.5 0 0 0 .708.708L8 8.707l2.646 2.647a.5.5 0 0 0 .708-.708L8.707 8l2.647-2.646a.5.5 0 0 0-.708-.708L8 7.293 5.354 4.646z');
+            }
+            
+            // Show toast
+            toast.classList.add('show');
+            
+            // Hide after 2 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+        
         // Time adjustment modal variables
         let currentUserId = null;
         let currentUsername = '';
@@ -367,7 +510,7 @@
         // Function to submit the time adjustment
         function submitTimeAdjustment() {
             if (timeAdjustment === 0) {
-                alert('No time adjustment specified');
+                showNotification('No time adjustment specified', 'error');
                 return;
             }
             
