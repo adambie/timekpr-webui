@@ -1,119 +1,200 @@
-# Timekpr Remote Management Panel
+# TimeKpr WebUI
 
-A web-based dashboard for managing [Timekpr-nExT](https://mjasnik.gitlab.io/timekpr-next/) instances in your home network:
-- app contains basic web UI, 
-- database for holding managed PCs data,
-- background task that periodically connects via ssh to managed PCs. 
+A web-based interface for managing TimeKpr parental controls across multiple computers in your network.
 
-SSH connections invoke remotely 'timekpra' commands to modify settings remotely.  
-App is designed to be launched easily from docker container.
+![Timekpr Dashboard](docs/dashboard.png)
 
-**Important feature (and main reason why I created own app) was to have background task that would try to apply timing changes also to PCs that are currently powered off. As soon as they are started they will be updated with new time limits.**
+## Features
 
+- **Remote Management**: Control multiple computers running TimeKpr from a single web interface
+- **Time Adjustments**: Add or remove time for users on remote systems
+- **Usage Tracking**: View daily and weekly usage statistics with interactive charts
+- **Weekly Scheduling**: Set different time limits for each day of the week
+- **Real-time Sync Status**: Live updates of synchronization status without page refresh
+- **User Management**: Add, validate, and monitor users across different systems
+- **Background Synchronization**: Automatic synchronization of settings and time adjustments
+- **Responsive Design**: Works on desktop and mobile devices
 
-![Timekpr Dashboard](docs/images/dashboard.png)
+---
 
-## Prerequisites
-- Python 3.6+
-- Flask and SQLAlchemy
-- Paramiko (for SSH)
-- Timekpr installed on target computers
-- SSH access to managed computers (using timekpr-remote user)
+## 🚀 Getting Started
 
-## Installation
+### Prerequisites
 
-The easiest way to deploy the application is using Docker and Docker Compose.
+Before running TimeKpr WebUI, ensure you have:
+- **Docker and Docker Compose** installed on your system
+- **TimeKpr-nExT** installed on all target computers you want to manage
+- **Network access** between the WebUI host and target computers
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/timekpr-remote.git
-   cd timekpr-remote
-   ```
+### 1. Quick Setup with Docker
 
-2. Deploy with Docker Compose:
-   ```bash
-   docker-compose up -d
-   ```
+1. **Clone the repository:**
+```bash
+git clone https://github.com/yourusername/timekpr-ui.git
+cd timekpr-ui
+```
 
-   This will:
-   - Build the Docker image
-   - Start the container
-   - Map port 5000 to your host
-   - Create a persistent volume for the database
-   - Configure the container to restart automatically
+2. **Start with Docker Compose:**
+```bash
+docker-compose up -d
+```
 
-3. Access the web interface at `http://localhost:5000`
+This will build the container and start the application on `http://localhost:5000`
 
-The application data will be stored in the `./data` directory on your host, making it persistent across container restarts.
+### 2. First Login and Password Setup
 
-### Manual Installation (Alternative)
-
-If you prefer to run the application without Docker:
-
-1. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-2. Install required packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-3. Start the application:
-   ```bash
-   python app.py
-   ```
-
-## Setting Up Remote Access
-
-On each computer you want to manage:
-
-1. Install Timekpr if not already installed:
-   ```bash
-   sudo apt install timekpr-next
-   ```
-
-2. Create a dedicated user for remote management:
-   ```bash
-   sudo adduser timekpr-remote
-   ```
-
-3. Add created user to timekpr group:
-   ```bash
-   sudo usermod -aG timekpr timekpr-remote
-   ```
-4. Be sure to set password for created user timekpr-remote to be same as password you will set for 'admin' user in following steps!
-   ```bash
-   sudo passwd timekpr-remote
-   ```
-
-5. Set up SSH access from your central server to this user
-
-## Usage
-
-1. **Login**: Access the web interface and login with the default credentials:
+1. **Open your browser** and navigate to `http://localhost:5000`
+2. **Login with default credentials:**
    - Username: `admin`
    - Password: `admin`
-   
-   (Be sure to change the default password in the Settings page)
 
-2. **Add Users**: Navigate to the Admin page to add users you want to manage
-   - Enter the username (as configured in Timekpr)
-   - Enter the IP address of the computer
+3. **⚠️ IMPORTANT - Change Password Immediately:**
+   - Go to **Settings** page
+   - Change the default password
+   - This password will be used for both web login AND SSH connections to managed computers
 
-3. **Dashboard**: View time usage statistics and manage time limits
-   - See remaining time for each user
-   - Add or subtract time as needed
-   - View weekly usage patterns
+### 3. Remote System Configuration
 
-4. **Settings**: Manage application settings
-   - Change admin password (affects both web login and SSH connections)
+For **each computer** you want to manage remotely:
 
+#### Install TimeKpr-nExT:
+```bash
+sudo apt update
+sudo apt install timekpr-next
+```
+
+#### Create dedicated management user:
+```bash
+sudo adduser timekpr-remote
+sudo usermod -aG timekpr timekpr-remote
+```
+
+#### Set password (must match your web admin password):
+```bash
+sudo passwd timekpr-remote
+# Enter the SAME password you set in the web interface
+```
+
+#### Verify SSH access:
+```bash
+# Test from the WebUI host machine
+ssh timekpr-remote@TARGET_COMPUTER_IP
+```
+
+### 4. Add Your First User
+
+1. Go to **Admin** panel in the web interface
+2. Click **"Add User"**
+3. Enter:
+   - **Username**: The actual user account on the remote computer
+   - **System IP**: IP address of the remote computer
+4. Click **"Add User"** - the system will automatically validate the connection
+
+---
+
+## 📊 Daily Usage
+
+### Dashboard Overview
+
+The main dashboard provides a comprehensive view of all managed users:
+
+![Dashboard](docs/dashboard.png)
+*Real-time view of all users with usage charts, time remaining, and sync status*
+
+#### Key Features:
+- **📈 Usage Charts**: Weekly usage history with weekend highlighting
+- **⏱️ Time Left Today**: Current remaining time for each user
+- **🔄 Sync Status**: Real-time indicators for pending changes
+- **⚡ Quick Actions**: Instant time adjustments and schedule access
+
+### Time Management
+
+#### Adjusting Time Limits
+1. Click **"Adjust Time"** on any user card
+2. Use **+15m/-15m** buttons or set custom amounts
+3. Changes apply immediately if the computer is online
+4. Offline computers receive updates when they come back online
+
+![Time Adjustment](docs/time-adjust.png)
+*Modern toast notifications replace old popup dialogs*
+
+#### Weekly Scheduling
+1. Click **"Schedule"** for detailed time management
+2. Set different time limits for each day of the week
+3. **Weekdays vs Weekends**: Visual distinction in charts
+4. **Real-time Sync**: Status badges update automatically every 5 seconds
+
+![Weekly Schedule](docs/schedule.png)
+*Comprehensive weekly schedule management with sync status*
+
+### Administrative Functions
+
+#### User Management
+- **Add/Remove Users**: Manage users across multiple computers
+- **Validation Status**: Real-time connection verification
+- **Usage History**: Track patterns and trends
+
+#### System Monitoring
+- **Background Tasks**: Automatic sync monitoring (hidden when working properly)
+- **Error Handling**: Smart notifications appear only when issues need attention
+- **Connection Status**: Live indicators for each managed system
+
+### Background Synchronization
+
+The system continuously monitors and synchronizes:
+- ✅ **Time adjustments** for offline computers
+- ✅ **Weekly schedule changes**
+- ✅ **Usage data collection** every 10 seconds
+- ✅ **Automatic retry** for failed connections
+
+#### Sync Status Indicators:
+- **🟢 Hidden**: Everything working normally
+- **🟡 "Schedule Not Synced"**: Changes pending sync
+- **🔴 Error indicators**: Issues requiring attention
+
+### Mobile-Friendly Interface
+
+The responsive design works seamlessly on:
+- **📱 Smartphones**: Touch-optimized controls
+- **📱 Tablets**: Adaptive grid layouts  
+- **💻 Desktop**: Full feature access
+
+---
+
+## 🔧 Advanced Configuration
+
+### Environment Variables
+- `FLASK_ENV`: Development mode (default: production)
+- Custom database paths and network settings available
+
+### Docker Customization
+```yaml
+# docker-compose.yml modifications
+ports:
+  - "8080:5000"  # Change port binding
+volumes:
+  - ./data:/app/data  # Persistent data storage
+```
+
+### Troubleshooting
+- **Connection Issues**: Verify SSH access and user permissions
+- **Sync Problems**: Check background task status in dashboard
+- **Performance**: Monitor system resources for large user bases
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request with detailed description
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
 
 ## Acknowledgements
 
 - This project works with [Timekpr-nExT](https://mjasnik.gitlab.io/timekpr-next/), a parental control tool for Linux
 - Built with Flask, SQLAlchemy, and Paramiko
-- Inspired by [timekpr-next-remote] (https://github.com/mrjones-plip/timekpr-next-remote): I learnet there that timekpt can be managed via CLI remotely. Main reason why I created my own version was need to have bockground service that would apply changes also on PCs that currently are powered down. 
+- Inspired by [timekpr-next-remote](https://github.com/mrjones-plip/timekpr-next-remote) - Main reason for creating this version was the need for background service that applies changes to PCs that are currently powered down.
