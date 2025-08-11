@@ -1,10 +1,11 @@
-version: '3'
-
 services:
   web:
     build: .
     ports:
       - "5000:5000"
     volumes:
-      - ./data:/app/data
+      - timekpr_data:/app/instance
     restart: unless-stopped
+
+volumes:
+  timekpr_data:

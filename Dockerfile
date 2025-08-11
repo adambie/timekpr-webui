@@ -7,8 +7,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-client \
     && rm -rf /var/lib/apt/lists/*
 
-# Create data directory with proper permissions
-RUN mkdir -p /app/data && chmod 777 /app/data
+# Create instance directory for Flask app data (database)
+RUN mkdir -p /app/instance && chmod 777 /app/instance
 
 # Copy requirements first to leverage Docker cache
 COPY requirements.txt .
