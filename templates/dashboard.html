@@ -211,6 +211,29 @@
                                 values.push({{ time_spent / 3600 }});  // Convert seconds to hours
                             {% endfor %}
                             
+                            // Calculate appropriate Y-axis scale with max 6 grid lines
+                            function calculateYAxisScale(maxValue) {
+                                if (maxValue === 0) return { max: 1, stepSize: 0.5 };
+                                
+                                // Define nice step sizes in hours
+                                const niceSteps = [0.1, 0.2, 0.25, 0.5, 1, 2, 3, 4, 6, 8, 12];
+                                
+                                // Target maximum 6 intervals (grid lines)
+                                const maxIntervals = 6;
+                                const minStepSize = maxValue / maxIntervals;
+                                
+                                // Find the smallest nice step that gives us <= 6 intervals
+                                let stepSize = niceSteps.find(step => step >= minStepSize) || niceSteps[niceSteps.length - 1];
+                                
+                                // Calculate the ceiling based on step size
+                                const max = Math.ceil(maxValue / stepSize) * stepSize;
+                                
+                                return { max, stepSize };
+                            }
+                            
+                            const maxValue = Math.max(...values, 1); // Ensure at least 1
+                            const { max: yAxisMax, stepSize } = calculateYAxisScale(maxValue);
+                            
                             const chart = new Chart(ctx, {
                                 type: 'bar',
                                 data: {
@@ -250,6 +273,28 @@
                                     scales: {
                                         y: {
                                             beginAtZero: true,
+                                            max: yAxisMax,
+                                            ticks: {
+                                                stepSize: stepSize,
+                                                color: 'rgb(100 116 139)',
+                                                font: {
+                                                    size: 11
+                                                },
+                                                callback: function(value) {
+                                                    // Format hours nicely
+                                                    if (value === 0) return '0h';
+                                                    if (value < 1) {
+                                                        const minutes = Math.round(value * 60);
+                                                        return `${minutes}m`;
+                                                    }
+                                                    if (value % 1 === 0) {
+                                                        return `${value}h`;
+                                                    }
+                                                    const hours = Math.floor(value);
+                                                    const minutes = Math.round((value % 1) * 60);
+                                                    return `${hours}h${minutes}m`;
+                                                }
+                                            },
                                             title: {
                                                 display: true,
                                                 text: 'Hours',
@@ -261,12 +306,6 @@
                                             },
                                             grid: {
                                                 color: 'rgb(226 232 240 / 0.5)',
-                                            },
-                                            ticks: {
-                                                color: 'rgb(100 116 139)',
-                                                font: {
-                                                    size: 11
-                                                }
                                             }
                                         },
                                         x: {
