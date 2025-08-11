@@ -41,6 +41,8 @@ docker-compose up -d
 
 This will build the container and start the application on `http://localhost:5000`
 
+**🔒 Data Persistence**: The application uses a Docker named volume (`timekpr_data`) to persist your database and configuration. Your data will survive container rebuilds, updates, and system restarts without any additional setup.
+
 ### 2. First Login and Password Setup
 
 1. **Open your browser** and navigate to `http://localhost:5000`
@@ -170,10 +172,15 @@ The responsive design works seamlessly on:
 ### Docker Customization
 ```yaml
 # docker-compose.yml modifications
-ports:
-  - "8080:5000"  # Change port binding
+services:
+  web:
+    ports:
+      - "8080:5000"  # Change port binding
+    volumes:
+      - timekpr_data:/app/instance  # Database persistence (named volume)
+      
 volumes:
-  - ./data:/app/data  # Persistent data storage
+  timekpr_data:  # Docker-managed persistent storage
 ```
 
 ### Troubleshooting
