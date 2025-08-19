@@ -30,8 +30,8 @@ Before running TimeKpr WebUI, ensure you have:
 
 1. **Clone the repository:**
 ```bash
-git clone https://github.com/yourusername/timekpr-ui.git
-cd timekpr-ui
+git clone https://github.com/adambie/timekpr-webui.git
+cd timekpr-webui
 ```
 
 2. **Start with Docker Compose:**
