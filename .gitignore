@@ -1,3 +1,11 @@
+# SSH Keys - NEVER commit private keys!
+ssh/
+*.pem
+*.key
+id_rsa*
+timekpr_ui_key*
+
+# Python
 venv/
 __pycache__/
 *.py[cod]
