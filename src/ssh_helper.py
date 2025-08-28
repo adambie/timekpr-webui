@@ -3,13 +3,36 @@ import time
 from datetime import datetime
 import re
 import json
-from src.database import Settings
+import os
 
 class SSHClient:
-    def __init__(self, hostname, username='timekpr-remote', password=None, port=22):
+    def __init__(self, hostname, username='timekpr-remote', key_path=None, port=22):
         self.hostname = hostname
         self.username = username
-        self.password = password if password else Settings.get_value('admin_password', 'admin')
+        # Auto-detect key path based on environment
+        if key_path is None:
+            # Get project root directory (parent of src directory)
+            project_root = os.path.dirname(os.path.dirname(__file__))
+            
+            # Try different possible paths
+            possible_paths = [
+                '/app/ssh/timekpr_ui_key',  # Docker path
+                os.path.join(project_root, 'ssh', 'timekpr_ui_key'),  # Local path
+                os.path.join(os.getcwd(), 'ssh', 'timekpr_ui_key'),  # Current working directory
+                'ssh/timekpr_ui_key'  # Relative path
+            ]
+            
+            self.key_path = None
+            for path in possible_paths:
+                if os.path.exists(path):
+                    self.key_path = path
+                    break
+            
+            # If no key found, use the local path as default (for better error message)
+            if self.key_path is None:
+                self.key_path = os.path.join(project_root, 'ssh', 'timekpr_ui_key')
+        else:
+            self.key_path = key_path
         self.port = port
         
     def validate_user(self, username):
@@ -20,10 +43,20 @@ class SSHClient:
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            
+            # Load private key
+            if not os.path.exists(self.key_path):
+                return False, f"SSH private key not found at {self.key_path}", None
+            
+            try:
+                private_key = paramiko.RSAKey.from_private_key_file(self.key_path)
+            except Exception as e:
+                return False, f"Failed to load SSH private key: {str(e)}", None
+            
             client.connect(
                 hostname=self.hostname,
                 username=self.username,
-                password=self.password,
+                pkey=private_key,
                 port=self.port,
                 timeout=10
             )
@@ -101,10 +134,20 @@ class SSHClient:
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            
+            # Load private key
+            if not os.path.exists(self.key_path):
+                return False, f"SSH private key not found at {self.key_path}"
+            
+            try:
+                private_key = paramiko.RSAKey.from_private_key_file(self.key_path)
+            except Exception as e:
+                return False, f"Failed to load SSH private key: {str(e)}"
+            
             client.connect(
                 hostname=self.hostname,
                 username=self.username,
-                password=self.password,
+                pkey=private_key,
                 port=self.port,
                 timeout=10
             )
@@ -145,10 +188,20 @@ class SSHClient:
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            
+            # Load private key
+            if not os.path.exists(self.key_path):
+                return False, f"SSH private key not found at {self.key_path}"
+            
+            try:
+                private_key = paramiko.RSAKey.from_private_key_file(self.key_path)
+            except Exception as e:
+                return False, f"Failed to load SSH private key: {str(e)}"
+            
             client.connect(
                 hostname=self.hostname,
                 username=self.username,
-                password=self.password,
+                pkey=private_key,
                 port=self.port,
                 timeout=10
             )
@@ -266,10 +319,20 @@ class SSHClient:
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            
+            # Load private key
+            if not os.path.exists(self.key_path):
+                return False, f"SSH private key not found at {self.key_path}"
+            
+            try:
+                private_key = paramiko.RSAKey.from_private_key_file(self.key_path)
+            except Exception as e:
+                return False, f"Failed to load SSH private key: {str(e)}"
+            
             client.connect(
                 hostname=self.hostname,
                 username=self.username,
-                password=self.password,
+                pkey=private_key,
                 port=self.port,
                 timeout=10
             )

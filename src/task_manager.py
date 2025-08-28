@@ -118,8 +118,7 @@ class BackgroundTaskManager:
                 try:
                     logger.info("Processing user: %s @ %s", user.username, user.system_ip)
                     
-                    # Connect to the system and get user info - use current password from settings
-                    admin_password = Settings.get_value('admin_password', 'admin')
+                    # Connect to the system and get user info - use SSH key authentication
                     ssh_client = SSHClient(hostname=user.system_ip)
                     
                     # Check if there's a pending time adjustment

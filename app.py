@@ -37,10 +37,8 @@ def login():
         username = request.form.get('username')
         password = request.form.get('password')
         
-        # Get the admin password from settings, default to 'admin'
-        admin_password = Settings.get_value('admin_password', 'admin')
-        
-        if username == ADMIN_USERNAME and password == admin_password:
+        # Check admin password using hash comparison
+        if username == ADMIN_USERNAME and Settings.check_admin_password(password):
             session['logged_in'] = True
             flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
@@ -121,21 +119,18 @@ def settings():
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
         
-        # Get the current admin password
-        admin_password = Settings.get_value('admin_password', 'admin')
-        
         # Validate inputs
         if not current_password or not new_password or not confirm_password:
             flash('All fields are required', 'danger')
-        elif current_password != admin_password:
+        elif not Settings.check_admin_password(current_password):
             flash('Current password is incorrect', 'danger')
         elif new_password != confirm_password:
             flash('New passwords do not match', 'danger')
         elif len(new_password) < 4:
             flash('New password must be at least 4 characters long', 'danger')
         else:
-            # Update the password
-            Settings.set_value('admin_password', new_password)
+            # Update the password with hashing
+            Settings.set_admin_password(new_password)
             flash('Password updated successfully', 'success')
             
             # Redirect to avoid form resubmission
@@ -636,8 +631,8 @@ with app.app_context():
     print("Database tables verified")
     
     # Initialize admin password if it doesn't exist
-    if not Settings.get_value('admin_password', None):
-        Settings.set_value('admin_password', 'admin')
+    if not Settings.get_value('admin_password_hash', None) and not Settings.get_value('admin_password', None):
+        Settings.set_admin_password('admin')
         print("Admin password initialized")
     
     # Start background tasks automatically

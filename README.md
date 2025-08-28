@@ -14,6 +14,7 @@ A web-based interface for managing TimeKpr parental controls across multiple com
 - **User Management**: Add, validate, and monitor users across different systems
 - **Background Synchronization**: Automatic synchronization of settings and time adjustments
 - **Responsive Design**: Works on desktop and mobile devices
+- **🔐 Secure Authentication**: SSH key-based remote access + bcrypt password hashing
 
 ---
 
@@ -34,7 +35,13 @@ git clone https://github.com/adambie/timekpr-webui.git
 cd timekpr-webui
 ```
 
-2. **Start with Docker Compose:**
+2. **Generate SSH key pair for secure authentication:**
+```bash
+mkdir ssh
+ssh-keygen -t rsa -b 4096 -f ./ssh/timekpr_ui_key -N ""
+```
+
+3. **Start with Docker Compose:**
 ```bash
 docker-compose up -d
 ```
@@ -53,7 +60,7 @@ This will build the container and start the application on `http://localhost:500
 3. **⚠️ IMPORTANT - Change Password Immediately:**
    - Go to **Settings** page
    - Change the default password
-   - This password will be used for both web login AND SSH connections to managed computers
+   - This password is used only for web login authentication
 
 ### 3. Remote System Configuration
 
@@ -71,16 +78,26 @@ sudo adduser timekpr-remote
 sudo usermod -aG timekpr timekpr-remote
 ```
 
-#### Set password (must match your web admin password):
+#### Setup SSH key authentication:
 ```bash
-sudo passwd timekpr-remote
-# Enter the SAME password you set in the web interface
+# Create SSH directory for the user
+sudo mkdir -p /home/timekpr-remote/.ssh
+sudo chmod 700 /home/timekpr-remote/.ssh
+
+# Copy your public key from the WebUI host
+scp ./ssh/timekpr_ui_key.pub user@TARGET_COMPUTER_IP:/tmp/
+
+# On the remote computer, add the key to authorized_keys
+sudo cat /tmp/timekpr_ui_key.pub >> /home/timekpr-remote/.ssh/authorized_keys
+sudo chmod 600 /home/timekpr-remote/.ssh/authorized_keys
+sudo chown -R timekpr-remote:timekpr-remote /home/timekpr-remote/.ssh
+sudo rm /tmp/timekpr_ui_key.pub
 ```
 
-#### Verify SSH access:
+#### Verify SSH key access:
 ```bash
-# Test from the WebUI host machine
-ssh timekpr-remote@TARGET_COMPUTER_IP
+# Test from the WebUI host machine (should not ask for password)
+ssh -i ./ssh/timekpr_ui_key timekpr-remote@TARGET_COMPUTER_IP
 ```
 
 ### 4. Add Your First User
@@ -91,6 +108,39 @@ ssh timekpr-remote@TARGET_COMPUTER_IP
    - **Username**: The actual user account on the remote computer
    - **System IP**: IP address of the remote computer
 4. Click **"Add User"** - the system will automatically validate the connection
+
+---
+
+## 🖥️ Alternative: Manual Installation (Without Docker)
+
+If you prefer to run without Docker:
+
+### 1. Install Dependencies
+```bash
+# Clone repository
+git clone https://github.com/yourusername/timekpr-ui.git
+cd timekpr-ui
+
+# Install Python dependencies
+pip install -r requirements.txt
+```
+
+### 2. Generate SSH Keys
+```bash
+# Create SSH key pair
+mkdir ssh
+ssh-keygen -t rsa -b 4096 -f ./ssh/timekpr_ui_key -N ""
+```
+
+### 3. Run Application
+```bash
+# Start the application
+python app.py
+```
+
+The application will start on `http://localhost:5000` with database at `instance/timekpr.db`
+
+**Note**: Follow the same remote system configuration steps (SSH key setup) as described above.
 
 ---
 
@@ -160,6 +210,25 @@ The responsive design works seamlessly on:
 - **📱 Smartphones**: Touch-optimized controls
 - **📱 Tablets**: Adaptive grid layouts  
 - **💻 Desktop**: Full feature access
+
+---
+
+## 🔐 Security Features
+
+### Authentication Security
+- **🔑 SSH Key Authentication**: No passwords transmitted over network
+- **🛡️ bcrypt Password Hashing**: Admin passwords secured with salt + industry-standard hashing
+- **🔒 Automatic Migration**: Existing plain-text passwords automatically upgraded to secure hashes
+
+### Remote System Security
+- **👤 Dedicated User**: `timekpr-remote` user with minimal privileges
+- **🔐 Key-based Access**: RSA 4096-bit keys for all SSH connections
+- **🚫 No Password Storage**: Zero plain-text credentials in database or configuration
+
+### Database Security
+- **🧂 Salt Protection**: Each password gets unique salt (prevents rainbow table attacks)
+- **💪 Brute Force Resistance**: bcrypt cost factor makes attacks computationally expensive
+- **🔍 Audit Trail**: All changes tracked with timestamps
 
 ---
 

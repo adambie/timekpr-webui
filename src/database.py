@@ -1,6 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta
 import json
+import bcrypt
 
 db = SQLAlchemy()
 
@@ -27,6 +28,46 @@ class Settings(db.Model):
             db.session.add(setting)
         db.session.commit()
         return setting
+    
+    @classmethod
+    def hash_password(cls, password):
+        """Hash a password using bcrypt"""
+        salt = bcrypt.gensalt()
+        hashed = bcrypt.hashpw(password.encode('utf-8'), salt)
+        return hashed.decode('utf-8')
+    
+    @classmethod
+    def check_password(cls, password, hashed_password):
+        """Check if password matches the stored hash"""
+        return bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8'))
+    
+    @classmethod
+    def set_admin_password(cls, password):
+        """Set admin password with hashing"""
+        hashed = cls.hash_password(password)
+        cls.set_value('admin_password_hash', hashed)
+        # Remove old plain text password if it exists
+        old_password = cls.query.filter_by(key='admin_password').first()
+        if old_password:
+            db.session.delete(old_password)
+            db.session.commit()
+    
+    @classmethod
+    def check_admin_password(cls, password):
+        """Check admin password against stored hash"""
+        hashed_password = cls.get_value('admin_password_hash')
+        if not hashed_password:
+            # Check if we have old plain text password for migration
+            old_password = cls.get_value('admin_password')
+            if old_password:
+                # Migrate old password to hashed format
+                cls.set_admin_password(old_password)
+                return password == old_password
+            else:
+                # No password set, initialize with default
+                cls.set_admin_password('admin')
+                return password == 'admin'
+        return cls.check_password(password, hashed_password)
 
 class ManagedUser(db.Model):
     __tablename__ = 'managed_user'

@@ -5,6 +5,7 @@ services:
       - "5000:5000"
     volumes:
       - timekpr_data:/app/instance
+      - ./ssh:/app/ssh:ro
     restart: unless-stopped
 
 volumes:
