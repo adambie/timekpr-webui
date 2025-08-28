@@ -40,6 +40,7 @@ cd timekpr-webui
 mkdir ssh
 ssh-keygen -t rsa -b 4096 -f ./ssh/timekpr_ui_key -N ""
 ```
+⚠️ **Important**: Generate your own unique SSH keys. Never use keys from public repositories!
 
 3. **Start with Docker Compose:**
 ```bash
@@ -131,6 +132,7 @@ pip install -r requirements.txt
 mkdir ssh
 ssh-keygen -t rsa -b 4096 -f ./ssh/timekpr_ui_key -N ""
 ```
+⚠️ **Important**: Generate your own unique SSH keys. Never use keys from public repositories!
 
 ### 3. Run Application
 ```bash
