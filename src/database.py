@@ -112,6 +112,80 @@ class ManagedUser(db.Model):
         
         return usage_dict
     
+    def get_usage_weekly_grouped(self, weeks=13):
+        """Get usage totals grouped by week (Monday-Sunday) for the last N weeks"""
+        today = datetime.utcnow().date()
+        # Start from Monday of the week N-1 weeks ago
+        days_since_monday = today.weekday()  # 0=Monday
+        current_monday = today - timedelta(days=days_since_monday)
+        start_date = current_monday - timedelta(weeks=weeks - 1)
+
+        records = UserTimeUsage.query.filter_by(user_id=self.id).filter(
+            UserTimeUsage.date >= start_date,
+            UserTimeUsage.date <= today
+        ).order_by(UserTimeUsage.date).all()
+
+        result = []
+        for i in range(weeks):
+            week_start = start_date + timedelta(weeks=i)
+            week_end = week_start + timedelta(days=6)
+            total = sum(r.time_spent for r in records if week_start <= r.date <= week_end)
+            result.append({
+                'label': week_start.strftime('%d %b'),
+                'week_start': week_start.strftime('%Y-%m-%d'),
+                'total': total,
+            })
+        return result
+
+    def get_usage_monthly_grouped(self, months=12):
+        """Get usage totals grouped by calendar month for the last N months"""
+        today = datetime.utcnow().date()
+
+        result = []
+        for i in range(months - 1, -1, -1):
+            # Walk back i months from current month
+            month = today.month - i
+            year = today.year
+            while month <= 0:
+                month += 12
+                year -= 1
+            month_start = today.replace(year=year, month=month, day=1)
+            if month == 12:
+                month_end = today.replace(year=year + 1, month=1, day=1) - timedelta(days=1)
+            else:
+                month_end = today.replace(year=year, month=month + 1, day=1) - timedelta(days=1)
+
+            records = UserTimeUsage.query.filter_by(user_id=self.id).filter(
+                UserTimeUsage.date >= month_start,
+                UserTimeUsage.date <= month_end
+            ).all()
+            total = sum(r.time_spent for r in records)
+            result.append({
+                'label': month_start.strftime('%b %Y'),
+                'month': month_start.strftime('%Y-%m'),
+                'total': total,
+            })
+        return result
+
+    def get_all_usage_monthly(self):
+        """Get all recorded usage grouped by calendar month, oldest first"""
+        records = UserTimeUsage.query.filter_by(user_id=self.id).order_by(UserTimeUsage.date).all()
+        if not records:
+            return []
+
+        from collections import defaultdict
+        buckets = defaultdict(int)
+        for r in records:
+            key = r.date.strftime('%Y-%m')
+            buckets[key] += r.time_spent
+
+        result = []
+        for key in sorted(buckets):
+            year, month = int(key[:4]), int(key[5:])
+            label = datetime(year, month, 1).strftime('%b %Y')
+            result.append({'label': label, 'month': key, 'total': buckets[key]})
+        return result
+
     def get_config_value(self, key):
         """Extract a specific value from the stored config"""
         if not self.last_config:

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage History - {{ user.username }} - TimeKpr WebUI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
+    <style>
+        .stats-main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: var(--space-6);
+        }
+
+        .stats-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-6);
+            flex-wrap: wrap;
+            gap: var(--space-4);
+        }
+
+        .stats-header-title h1 {
+            font-size: var(--font-size-2xl);
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+        }
+
+        .stats-header-title p {
+            color: var(--text-tertiary);
+            margin: var(--space-1) 0 0 0;
+            font-size: var(--font-size-sm);
+        }
+
+        .summary-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+
+        .summary-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            padding: var(--space-4) var(--space-5);
+        }
+
+        .summary-card .summary-label {
+            font-size: var(--font-size-xs);
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            margin-bottom: var(--space-1);
+        }
+
+        .summary-card .summary-value {
+            font-size: var(--font-size-xl);
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .summary-card .summary-sub {
+            font-size: var(--font-size-xs);
+            color: var(--text-tertiary);
+            margin-top: var(--space-1);
+        }
+
+        .period-tabs {
+            display: flex;
+            gap: var(--space-2);
+            margin-bottom: var(--space-6);
+            border-bottom: 1px solid var(--border-primary);
+            padding-bottom: 0;
+        }
+
+        .period-tab {
+            padding: var(--space-2) var(--space-4);
+            border: none;
+            background: none;
+            color: var(--text-tertiary);
+            font-size: var(--font-size-sm);
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+            transition: color 0.15s, border-color 0.15s;
+        }
+
+        .period-tab:hover {
+            color: var(--text-primary);
+        }
+
+        .period-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .chart-panel {
+            display: none;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-primary);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+        }
+
+        .chart-panel.active {
+            display: block;
+        }
+
+        .chart-panel-title {
+            font-size: var(--font-size-sm);
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-4);
+        }
+
+        .chart-wrapper {
+            height: 300px;
+            position: relative;
+        }
+
+        .no-data-msg {
+            text-align: center;
+            color: var(--text-tertiary);
+            padding: var(--space-12) 0;
+            font-size: var(--font-size-sm);
+        }
+    </style>
+</head>
+<body>
+    <div class="stats-main">
+        <div class="stats-header">
+            <div class="stats-header-title">
+                <h1>{{ user.username }}</h1>
+                <p>{{ user.system_ip }} &mdash; Usage History</p>
+            </div>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">&#8592; Dashboard</a>
+        </div>
+
+        <!-- Summary strip — values injected by JS after period switch -->
+        <div class="summary-strip">
+            <div class="summary-card">
+                <div class="summary-label">Total</div>
+                <div class="summary-value" id="stat-total">—</div>
+                <div class="summary-sub" id="stat-total-sub"></div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Daily Avg</div>
+                <div class="summary-value" id="stat-avg">—</div>
+                <div class="summary-sub" id="stat-avg-sub">per day</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-label">Peak</div>
+                <div class="summary-value" id="stat-peak">—</div>
+                <div class="summary-sub" id="stat-peak-label"></div>
+            </div>
+        </div>
+
+        <!-- Period tabs -->
+        <div class="period-tabs">
+            <button class="period-tab active" data-period="daily">Last 30 Days</button>
+            <button class="period-tab" data-period="weekly">Last 3 Months</button>
+            <button class="period-tab" data-period="monthly">Last 12 Months</button>
+            <button class="period-tab" data-period="alltime">All Time</button>
+        </div>
+
+        <!-- Chart panels -->
+        <div class="chart-panel active" id="panel-daily">
+            <div class="chart-panel-title">Daily usage — last 30 days</div>
+            {% if daily_30 %}
+                <div class="chart-wrapper"><canvas id="chart-daily"></canvas></div>
+            {% else %}
+                <div class="no-data-msg">No data recorded yet.</div>
+            {% endif %}
+        </div>
+
+        <div class="chart-panel" id="panel-weekly">
+            <div class="chart-panel-title">Weekly totals — last 13 weeks</div>
+            {% if weekly_13 %}
+                <div class="chart-wrapper"><canvas id="chart-weekly"></canvas></div>
+            {% else %}
+                <div class="no-data-msg">No data recorded yet.</div>
+            {% endif %}
+        </div>
+
+        <div class="chart-panel" id="panel-monthly">
+            <div class="chart-panel-title">Monthly totals — last 12 months</div>
+            {% if monthly_12 %}
+                <div class="chart-wrapper"><canvas id="chart-monthly"></canvas></div>
+            {% else %}
+                <div class="no-data-msg">No data recorded yet.</div>
+            {% endif %}
+        </div>
+
+        <div class="chart-panel" id="panel-alltime">
+            <div class="chart-panel-title">All recorded history by month</div>
+            {% if all_monthly %}
+                <div class="chart-wrapper"><canvas id="chart-alltime"></canvas></div>
+            {% else %}
+                <div class="no-data-msg">No data recorded yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+    (function() {
+        // ── Data from server ──────────────────────────────────────────────
+
+        const datasets = {
+            daily: {
+                labels: [],
+                values: [],
+                daysInPeriod: 30,
+                granularity: 'day',
+            },
+            weekly: {
+                labels: [],
+                values: [],
+                weekStarts: [],
+                daysInPeriod: 91,
+                granularity: 'week',
+            },
+            monthly: {
+                labels: [],
+                values: [],
+                months: [],
+                daysInPeriod: 365,
+                granularity: 'month',
+            },
+            alltime: {
+                labels: [],
+                values: [],
+                months: [],
+                daysInPeriod: null,
+                granularity: 'month',
+            },
+        };
+
+        // Daily (30 days) — dict iteration preserves insertion order in Python 3.7+
+        {% for date, seconds in daily_30.items() %}
+        datasets.daily.labels.push('{{ date }}');
+        datasets.daily.values.push({{ seconds / 3600 }});
+        {% endfor %}
+
+        // Weekly (13 weeks)
+        {% for w in weekly_13 %}
+        datasets.weekly.labels.push('{{ w.label }}');
+        datasets.weekly.values.push({{ w.total / 3600 }});
+        datasets.weekly.weekStarts.push('{{ w.week_start }}');
+        {% endfor %}
+
+        // Monthly (12 months)
+        {% for m in monthly_12 %}
+        datasets.monthly.labels.push('{{ m.label }}');
+        datasets.monthly.values.push({{ m.total / 3600 }});
+        datasets.monthly.months.push('{{ m.month }}');
+        {% endfor %}
+
+        // All time
+        {% for m in all_monthly %}
+        datasets.alltime.labels.push('{{ m.label }}');
+        datasets.alltime.values.push({{ m.total / 3600 }});
+        datasets.alltime.months.push('{{ m.month }}');
+        {% endfor %}
+
+        // ── Chart helpers ─────────────────────────────────────────────────
+
+        function isWeekend(label, granularity) {
+            if (granularity !== 'day') return false;
+            const d = new Date(label + 'T00:00:00');
+            return d.getDay() === 0 || d.getDay() === 6;
+        }
+
+        function fmtHours(h) {
+            if (h === 0) return '0h';
+            if (h < 1) return Math.round(h * 60) + 'm';
+            if (h % 1 === 0) return h + 'h';
+            return Math.floor(h) + 'h ' + Math.round((h % 1) * 60) + 'm';
+        }
+
+        function buildChart(canvasId, data) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return null;
+            const ctx = canvas.getContext('2d');
+            const { labels, values, granularity } = data;
+
+            const maxVal = Math.max(...values, 0.1);
+            const niceSteps = [0.1, 0.2, 0.25, 0.5, 1, 2, 3, 4, 6, 8, 12, 24];
+            const minStep = maxVal / 6;
+            const stepSize = niceSteps.find(s => s >= minStep) || niceSteps[niceSteps.length - 1];
+            const yMax = Math.ceil(maxVal / stepSize) * stepSize;
+
+            return new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Hours',
+                        data: values,
+                        backgroundColor: labels.map((l, i) =>
+                            isWeekend(l, granularity)
+                                ? 'rgb(245 158 11 / 0.6)'
+                                : 'rgb(59 130 246 / 0.6)'
+                        ),
+                        borderColor: labels.map((l, i) =>
+                            isWeekend(l, granularity)
+                                ? 'rgb(245 158 11)'
+                                : 'rgb(59 130 246)'
+                        ),
+                        borderWidth: 2,
+                        borderRadius: 4,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: yMax,
+                            ticks: {
+                                stepSize: stepSize,
+                                color: 'rgb(100 116 139)',
+                                font: { size: 11 },
+                                callback: v => fmtHours(v),
+                            },
+                            grid: { color: 'rgb(226 232 240 / 0.5)' },
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: labels.map((l, i) =>
+                                    isWeekend(l, granularity)
+                                        ? 'rgb(245 158 11)'
+                                        : 'rgb(100 116 139)'
+                                ),
+                                font: { size: 11, weight: '500' },
+                                maxRotation: granularity === 'day' ? 45 : 0,
+                            },
+                        },
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => fmtHours(ctx.parsed.y),
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ── Summary stats ─────────────────────────────────────────────────
+
+        function updateSummary(key) {
+            const d = datasets[key];
+            const values = d.values;
+            const total = values.reduce((a, b) => a + b, 0);
+            const days = d.daysInPeriod || (values.length * 30); // alltime: approx
+            const avg = days > 0 ? total / days : 0;
+            const peakVal = Math.max(...values, 0);
+            const peakIdx = values.indexOf(peakVal);
+            const peakLabel = peakIdx >= 0 ? d.labels[peakIdx] : '—';
+
+            const granularityLabel = {
+                day: 'in 30 days',
+                week: 'in 13 weeks',
+                month: 'in 12 months',
+            }[d.granularity] || 'recorded';
+
+            document.getElementById('stat-total').textContent = fmtHours(Math.round(total * 10) / 10);
+            document.getElementById('stat-total-sub').textContent = granularityLabel;
+            document.getElementById('stat-avg').textContent = fmtHours(Math.round(avg * 10) / 10);
+            document.getElementById('stat-peak').textContent = fmtHours(Math.round(peakVal * 10) / 10);
+            document.getElementById('stat-peak-label').textContent = peakLabel;
+        }
+
+        // ── Tab switching ─────────────────────────────────────────────────
+
+        const chartInstances = {};
+        let activePeriod = 'daily';
+
+        function switchPeriod(period) {
+            // Update tab styles
+            document.querySelectorAll('.period-tab').forEach(t => {
+                t.classList.toggle('active', t.dataset.period === period);
+            });
+            // Update panel visibility
+            document.querySelectorAll('.chart-panel').forEach(p => {
+                p.classList.toggle('active', p.id === 'panel-' + period);
+            });
+            // Build chart lazily (only once)
+            if (!chartInstances[period] && datasets[period].values.length > 0) {
+                chartInstances[period] = buildChart('chart-' + period, datasets[period]);
+            }
+            updateSummary(period);
+            activePeriod = period;
+        }
+
+        document.querySelectorAll('.period-tab').forEach(btn => {
+            btn.addEventListener('click', () => switchPeriod(btn.dataset.period));
+        });
+
+        // Init default period
+        switchPeriod('daily');
+    })();
+    </script>
+</body>
+</html>

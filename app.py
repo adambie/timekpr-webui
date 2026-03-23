@@ -592,6 +592,28 @@ def get_schedule_sync_status(user_id):
             'last_modified': None
         })
 
+@app.route('/stats/<int:user_id>')
+def user_stats(user_id):
+    """Display extended usage history for a single user"""
+    if not session.get('logged_in'):
+        flash('Please login first', 'warning')
+        return redirect(url_for('login'))
+
+    user = ManagedUser.query.get_or_404(user_id)
+
+    daily_30   = user.get_recent_usage(days=30)
+    weekly_13  = user.get_usage_weekly_grouped(weeks=13)
+    monthly_12 = user.get_usage_monthly_grouped(months=12)
+    all_monthly = user.get_all_usage_monthly()
+
+    return render_template('stats.html',
+        user=user,
+        daily_30=daily_30,
+        weekly_13=weekly_13,
+        monthly_12=monthly_12,
+        all_monthly=all_monthly,
+    )
+
 @app.route('/api/modify-time', methods=['POST'])
 def modify_time():
     """Modify time left for a user"""

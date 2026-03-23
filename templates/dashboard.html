@@ -171,6 +171,7 @@
                             <div class="user-actions">
                                 <button class="btn btn-primary" onclick="openTimeAdjustModal({{ user.id }}, '{{ user.username }}')">Adjust Time</button>
                                 <a href="{{ url_for('weekly_schedule_user', user_id=user.id) }}" class="btn btn-secondary">Schedule</a>
+                                <a href="{{ url_for('user_stats', user_id=user.id) }}" class="btn btn-secondary">History</a>
                             </div>
                         </div>
                             
