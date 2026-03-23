@@ -184,176 +184,15 @@
                     
                     <script>
                         (function() {
-                            const ctx = document.getElementById('chart-{{ user.id }}').getContext('2d');
-                            
-                            // Function to get weekday name from date string
-                            function getWeekdayName(dateStr) {
-                                const date = new Date(dateStr + 'T00:00:00');
-                                const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                                return weekdays[date.getDay()];
-                            }
-                            
-                            // Function to get short weekday name
-                            function getShortWeekdayName(dateStr) {
-                                const date = new Date(dateStr + 'T00:00:00');
-                                const shortWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-                                return shortWeekdays[date.getDay()];
-                            }
-                            
-                            // Prepare data with weekday labels
-                            const dates = [];
-                            const labels = [];
-                            const values = [];
-                            
+                            window._chartData = window._chartData || {};
+                            const shortWeekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                            const dates = [], labels = [], values = [];
                             {% for date, time_spent in user.usage_data.items() %}
                                 dates.push('{{ date }}');
-                                labels.push(getShortWeekdayName('{{ date }}'));
-                                values.push({{ time_spent / 3600 }});  // Convert seconds to hours
+                                labels.push(shortWeekdays[new Date('{{ date }}T00:00:00').getDay()]);
+                                values.push({{ time_spent / 3600 }});
                             {% endfor %}
-                            
-                            // Calculate appropriate Y-axis scale with max 6 grid lines
-                            function calculateYAxisScale(maxValue) {
-                                if (maxValue === 0) return { max: 1, stepSize: 0.5 };
-                                
-                                // Define nice step sizes in hours
-                                const niceSteps = [0.1, 0.2, 0.25, 0.5, 1, 2, 3, 4, 6, 8, 12];
-                                
-                                // Target maximum 6 intervals (grid lines)
-                                const maxIntervals = 6;
-                                const minStepSize = maxValue / maxIntervals;
-                                
-                                // Find the smallest nice step that gives us <= 6 intervals
-                                let stepSize = niceSteps.find(step => step >= minStepSize) || niceSteps[niceSteps.length - 1];
-                                
-                                // Calculate the ceiling based on step size
-                                const max = Math.ceil(maxValue / stepSize) * stepSize;
-                                
-                                return { max, stepSize };
-                            }
-                            
-                            const maxValue = Math.max(...values, 1); // Ensure at least 1
-                            const { max: yAxisMax, stepSize } = calculateYAxisScale(maxValue);
-                            
-                            const chart = new Chart(ctx, {
-                                type: 'bar',
-                                data: {
-                                    labels: labels,
-                                    datasets: [{
-                                        label: 'Hours Used',
-                                        data: values,
-                                        backgroundColor: function(context) {
-                                            const index = context.dataIndex;
-                                            const weekday = labels[index];
-                                            // Use theme-aware colors
-                                            if (weekday === 'Sat' || weekday === 'Sun') {
-                                                return 'rgb(245 158 11 / 0.6)'; // Warning color for weekends
-                                            }
-                                            return 'rgb(59 130 246 / 0.6)'; // Primary color for weekdays
-                                        },
-                                        borderColor: function(context) {
-                                            const index = context.dataIndex;
-                                            const weekday = labels[index];
-                                            if (weekday === 'Sat' || weekday === 'Sun') {
-                                                return 'rgb(245 158 11)';
-                                            }
-                                            return 'rgb(59 130 246)';
-                                        },
-                                        borderWidth: 2,
-                                        borderRadius: 6,
-                                        borderSkipped: false
-                                    }]
-                                },
-                                options: {
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    interaction: {
-                                        intersect: false,
-                                        mode: 'index'
-                                    },
-                                    scales: {
-                                        y: {
-                                            beginAtZero: true,
-                                            max: yAxisMax,
-                                            ticks: {
-                                                stepSize: stepSize,
-                                                color: 'rgb(100 116 139)',
-                                                font: {
-                                                    size: 11
-                                                },
-                                                callback: function(value) {
-                                                    // Format hours nicely
-                                                    if (value === 0) return '0h';
-                                                    if (value < 1) {
-                                                        const minutes = Math.round(value * 60);
-                                                        return `${minutes}m`;
-                                                    }
-                                                    if (value % 1 === 0) {
-                                                        return `${value}h`;
-                                                    }
-                                                    const hours = Math.floor(value);
-                                                    const minutes = Math.round((value % 1) * 60);
-                                                    return `${hours}h${minutes}m`;
-                                                }
-                                            },
-                                            title: {
-                                                display: true,
-                                                text: 'Hours',
-                                                color: 'rgb(100 116 139)',
-                                                font: {
-                                                    size: 12,
-                                                    weight: '500'
-                                                }
-                                            },
-                                            grid: {
-                                                color: 'rgb(226 232 240 / 0.5)',
-                                            }
-                                        },
-                                        x: {
-                                            grid: {
-                                                display: false
-                                            },
-                                            ticks: {
-                                                color: function(context) {
-                                                    const weekday = labels[context.index];
-                                                    if (weekday === 'Sat' || weekday === 'Sun') {
-                                                        return 'rgb(245 158 11)'; // Warning color for weekends
-                                                    }
-                                                    return 'rgb(100 116 139)'; // Tertiary text for weekdays
-                                                },
-                                                font: {
-                                                    size: 12,
-                                                    weight: '600'
-                                                }
-                                            }
-                                        }
-                                    },
-                                    plugins: {
-                                        legend: {
-                                            display: false
-                                        },
-                                        tooltip: {
-                                            callbacks: {
-                                                title: function(context) {
-                                                    const index = context[0].dataIndex;
-                                                    const fullWeekday = getWeekdayName(dates[index]);
-                                                    return fullWeekday + ' (' + dates[index] + ')';
-                                                },
-                                                label: function(context) {
-                                                    const hours = context.parsed.y;
-                                                    const minutes = Math.round((hours % 1) * 60);
-                                                    const wholeHours = Math.floor(hours);
-                                                    
-                                                    if (minutes === 0) {
-                                                        return `${wholeHours}h 0m`;
-                                                    } else {
-                                                        return `${wholeHours}h ${minutes}m`;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            });
+                            window._chartData[{{ user.id }}] = { dates, labels, values };
                         })();
                     </script>
                 {% endfor %}
@@ -366,6 +205,122 @@
             {% endif %}
         </div>
     </div>
+
+    <script>
+        (function() {
+            // Find the global max value across all stored chart data
+            const allValues = Object.values(window._chartData || {}).flatMap(d => d.values);
+            const globalMax = Math.max(...allValues, 1);
+
+            function calculateYAxisScale(maxValue) {
+                if (maxValue === 0) return { max: 1, stepSize: 0.5 };
+                const niceSteps = [0.1, 0.2, 0.25, 0.5, 1, 2, 3, 4, 6, 8, 12];
+                const maxIntervals = 6;
+                const minStepSize = maxValue / maxIntervals;
+                let stepSize = niceSteps.find(step => step >= minStepSize) || niceSteps[niceSteps.length - 1];
+                const max = Math.ceil(maxValue / stepSize) * stepSize;
+                return { max, stepSize };
+            }
+
+            const { max: yAxisMax, stepSize } = calculateYAxisScale(globalMax);
+
+            function getWeekdayName(dateStr) {
+                const date = new Date(dateStr + 'T00:00:00');
+                return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][date.getDay()];
+            }
+
+            for (const [userId, data] of Object.entries(window._chartData || {})) {
+                const canvas = document.getElementById('chart-' + userId);
+                if (!canvas) continue;
+                const ctx = canvas.getContext('2d');
+                const { dates, labels, values } = data;
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Hours Used',
+                            data: values,
+                            backgroundColor: function(context) {
+                                const weekday = labels[context.dataIndex];
+                                return (weekday === 'Sat' || weekday === 'Sun')
+                                    ? 'rgb(245 158 11 / 0.6)'
+                                    : 'rgb(59 130 246 / 0.6)';
+                            },
+                            borderColor: function(context) {
+                                const weekday = labels[context.dataIndex];
+                                return (weekday === 'Sat' || weekday === 'Sun')
+                                    ? 'rgb(245 158 11)'
+                                    : 'rgb(59 130 246)';
+                            },
+                            borderWidth: 2,
+                            borderRadius: 6,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: { intersect: false, mode: 'index' },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: yAxisMax,
+                                ticks: {
+                                    stepSize: stepSize,
+                                    color: 'rgb(100 116 139)',
+                                    font: { size: 11 },
+                                    callback: function(value) {
+                                        if (value === 0) return '0h';
+                                        if (value < 1) return Math.round(value * 60) + 'm';
+                                        if (value % 1 === 0) return value + 'h';
+                                        return Math.floor(value) + 'h' + Math.round((value % 1) * 60) + 'm';
+                                    }
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Hours',
+                                    color: 'rgb(100 116 139)',
+                                    font: { size: 12, weight: '500' }
+                                },
+                                grid: { color: 'rgb(226 232 240 / 0.5)' }
+                            },
+                            x: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: function(context) {
+                                        const weekday = labels[context.index];
+                                        return (weekday === 'Sat' || weekday === 'Sun')
+                                            ? 'rgb(245 158 11)'
+                                            : 'rgb(100 116 139)';
+                                    },
+                                    font: { size: 12, weight: '600' }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: function(context) {
+                                        const index = context[0].dataIndex;
+                                        return getWeekdayName(dates[index]) + ' (' + dates[index] + ')';
+                                    },
+                                    label: function(context) {
+                                        const hours = context.parsed.y;
+                                        const wholeHours = Math.floor(hours);
+                                        const minutes = Math.round((hours % 1) * 60);
+                                        return wholeHours + 'h ' + minutes + 'm';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
     
     <!-- Time Adjustment Modal -->
     <div id="timeAdjustModal" class="modal">
