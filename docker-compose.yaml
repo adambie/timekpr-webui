@@ -9,7 +9,7 @@ services:
     environment:
       # Set your timezone (e.g., America/New_York, Europe/London, America/Los_Angeles)
       # See: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-      - TZ=UTC
+      - TZ=Europe/Warsaw
     restart: unless-stopped
 
 volumes:
