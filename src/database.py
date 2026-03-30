@@ -5,6 +5,23 @@ import bcrypt
 
 db = SQLAlchemy()
 
+
+def coerce_time_spent_day(value):
+    """Normalise TIME_SPENT_DAY (sortie timekpra) en entier pour la colonne time_spent."""
+    if value is None:
+        return 0
+    if isinstance(value, bool):
+        return 0
+    if isinstance(value, int):
+        return value
+    if isinstance(value, (list, tuple)):
+        return coerce_time_spent_day(value[0]) if value else 0
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return 0
+
+
 class Settings(db.Model):
     __tablename__ = 'settings'
     id = db.Column(db.Integer, primary_key=True)

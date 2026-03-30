@@ -40,6 +40,7 @@ class SSHClient:
         Check if a user exists by running the timekpra --userinfo command
         Returns: (is_valid, message, config_dict)
         """
+        client = None
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -84,10 +85,11 @@ class SSHClient:
         except Exception as e:
             return False, f"Connection error: {str(e)}", None
         finally:
-            try:
-                client.close()
-            except:
-                pass
+            if client is not None:
+                try:
+                    client.close()
+                except Exception:
+                    pass
     
     def _parse_timekpr_output(self, output):
         """Parse the output of timekpra --userinfo command into a dictionary"""
@@ -131,6 +133,7 @@ class SSHClient:
         if operation not in ['+', '-']:
             return False, "Invalid operation. Must be '+' or '-'"
         
+        client = None
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -170,10 +173,11 @@ class SSHClient:
         except Exception as e:
             return False, f"Connection error: {str(e)}"
         finally:
-            try:
-                client.close()
-            except:
-                pass
+            if client is not None:
+                try:
+                    client.close()
+                except Exception:
+                    pass
     
     def set_weekly_time_limits(self, username, schedule_dict):
         """
@@ -185,6 +189,7 @@ class SSHClient:
         import logging
         logger = logging.getLogger(__name__)
         
+        client = None
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -301,10 +306,11 @@ class SSHClient:
             logger.error(f"Exception in set_weekly_time_limits: {str(e)}")
             return False, f"Connection error: {str(e)}"
         finally:
-            try:
-                client.close()
-            except:
-                pass
+            if client is not None:
+                try:
+                    client.close()
+                except Exception:
+                    pass
     
     def set_allowed_hours(self, username, intervals_dict):
         """
@@ -316,6 +322,7 @@ class SSHClient:
         import logging
         logger = logging.getLogger(__name__)
         
+        client = None
         try:
             client = paramiko.SSHClient()
             client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -428,7 +435,8 @@ class SSHClient:
             logger.error(f"Exception in set_allowed_hours: {str(e)}")
             return False, f"Connection error: {str(e)}"
         finally:
-            try:
-                client.close()
-            except:
-                pass
+            if client is not None:
+                try:
+                    client.close()
+                except Exception:
+                    pass
