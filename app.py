@@ -5,7 +5,15 @@ import json
 import logging
 import pytz
 
-from src.database import db, ManagedUser, UserTimeUsage, Settings, UserWeeklySchedule, UserDailyTimeInterval
+from src.database import (
+    db,
+    ManagedUser,
+    UserTimeUsage,
+    Settings,
+    UserWeeklySchedule,
+    UserDailyTimeInterval,
+    coerce_time_spent_day,
+)
 from src.ssh_helper import SSHClient
 from src.task_manager import BackgroundTaskManager
 
@@ -205,10 +213,16 @@ def logout():
     flash('You have been logged out', 'info')
     return redirect(url_for('login'))
 
-@app.route('/users/add', methods=['POST'])
+@app.route('/users/add', methods=['GET', 'POST'])
 def add_user():
     if not session.get('logged_in'):
+        if request.method == 'GET':
+            flash('Please login first', 'warning')
+            return redirect(url_for('login'))
         return jsonify({'success': False, 'message': 'Not authenticated'}), 401
+
+    if request.method == 'GET':
+        return redirect(url_for('admin'))
     
     username = request.form.get('username')
     system_ip = request.form.get('system_ip')
@@ -243,7 +257,7 @@ def add_user():
         
         # Add today's usage data
         today = date.today()
-        time_spent = config_dict.get('TIME_SPENT_DAY', 0)
+        time_spent = coerce_time_spent_day(config_dict.get('TIME_SPENT_DAY', 0))
         
         usage = UserTimeUsage(
             user_id=new_user.id,
@@ -280,7 +294,7 @@ def validate_user(user_id):
         
         # Update today's usage data
         today = date.today()
-        time_spent = config_dict.get('TIME_SPENT_DAY', 0)
+        time_spent = coerce_time_spent_day(config_dict.get('TIME_SPENT_DAY', 0))
         
         # Look for an existing record for today
         usage = UserTimeUsage.query.filter_by(

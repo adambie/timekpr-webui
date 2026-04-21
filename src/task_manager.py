@@ -6,7 +6,15 @@ import logging
 import json
 import traceback
 
-from src.database import db, ManagedUser, UserTimeUsage, Settings, UserWeeklySchedule, UserDailyTimeInterval
+from src.database import (
+    db,
+    ManagedUser,
+    UserTimeUsage,
+    Settings,
+    UserWeeklySchedule,
+    UserDailyTimeInterval,
+    coerce_time_spent_day,
+)
 from src.ssh_helper import SSHClient
 
 logger = logging.getLogger(__name__)
@@ -145,19 +153,37 @@ class BackgroundTaskManager:
                     
                     # Check if there's a pending weekly schedule sync
                     if user.weekly_schedule and not user.weekly_schedule.is_synced:
-                        logger.info(f"Attempting to sync weekly schedule for {user.username}")
-                        
                         schedule_dict = user.weekly_schedule.get_schedule_dict()
                         logger.info(f"DEBUG - schedule_dict from database: {schedule_dict}")
-                        success, message = ssh_client.set_weekly_time_limits(user.username, schedule_dict)
-                        
-                        if success:
-                            logger.info(f"Successfully synced weekly schedule for {user.username}")
+                        _week_days = (
+                            'monday', 'tuesday', 'wednesday', 'thursday',
+                            'friday', 'saturday', 'sunday',
+                        )
+                        has_positive_limits = any(
+                            (schedule_dict.get(d, 0) or 0) > 0 for d in _week_days
+                        )
+                        # set_weekly_time_limits rejects "all zero" — nothing to push; avoid endless WARNING loop
+                        if not has_positive_limits:
+                            logger.info(
+                                "No daily limits > 0 in UI for %s; marking weekly schedule synced (remote unchanged)",
+                                user.username,
+                            )
                             user.weekly_schedule.mark_synced()
                             db.session.commit()
-                            logger.info("Marked weekly schedule as synced in database")
                         else:
-                            logger.warning(f"Failed to sync weekly schedule for {user.username}: {message}")
+                            logger.info(f"Attempting to sync weekly schedule for {user.username}")
+                            success, message = ssh_client.set_weekly_time_limits(
+                                user.username, schedule_dict
+                            )
+                            if success:
+                                logger.info(f"Successfully synced weekly schedule for {user.username}")
+                                user.weekly_schedule.mark_synced()
+                                db.session.commit()
+                                logger.info("Marked weekly schedule as synced in database")
+                            else:
+                                logger.warning(
+                                    f"Failed to sync weekly schedule for {user.username}: {message}"
+                                )
                     else:
                         if user.weekly_schedule:
                             logger.info(f"Weekly schedule already synced for {user.username}")
@@ -206,7 +232,7 @@ class BackgroundTaskManager:
                             
                             # Update or create today's usage data
                             today = date.today()
-                            time_spent = config_dict.get('TIME_SPENT_DAY', 0)
+                            time_spent = coerce_time_spent_day(config_dict.get('TIME_SPENT_DAY', 0))
                             
                             # Look for an existing record for today
                             usage = UserTimeUsage.query.filter_by(
