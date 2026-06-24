@@ -443,25 +443,25 @@ def get_user_intervals(user_id):
     
     user = ManagedUser.query.get_or_404(user_id)
     
-    # Get all intervals for this user
-    intervals = UserDailyTimeInterval.query.filter_by(user_id=user.id).all()
-    
-    # Format intervals by day
-    intervals_dict = {}
+    # Get all intervals for this user, ordered by day and sort_order
+    intervals = UserDailyTimeInterval.query.filter_by(user_id=user.id).order_by(
+        UserDailyTimeInterval.day_of_week,
+        UserDailyTimeInterval.sort_order
+    ).all()
+
+    # Format intervals as a list per day
+    intervals_dict = {str(d): [] for d in range(1, 8)}
     for interval in intervals:
-        intervals_dict[interval.day_of_week] = {
+        intervals_dict[str(interval.day_of_week)].append({
             'id': interval.id,
-            'day_name': interval.get_day_name(),
             'start_hour': interval.start_hour,
             'start_minute': interval.start_minute,
             'end_hour': interval.end_hour,
             'end_minute': interval.end_minute,
-            'is_enabled': interval.is_enabled,
             'is_synced': interval.is_synced,
             'time_range': interval.get_time_range_string(),
-            'last_synced': interval.last_synced.strftime('%Y-%m-%d %H:%M') if interval.last_synced else None
-        }
-    
+        })
+
     return jsonify({
         'success': True,
         'intervals': intervals_dict,
@@ -477,69 +477,63 @@ def update_user_intervals(user_id):
     user = ManagedUser.query.get_or_404(user_id)
     
     try:
-        # Get interval data from request
         data = request.get_json()
         if not data:
             return jsonify({'success': False, 'message': 'No data provided'}), 400
-        
+
         intervals_data = data.get('intervals', {})
-        
-        for day_str, interval_data in intervals_data.items():
+
+        # Delete all existing intervals for this user and replace entirely
+        UserDailyTimeInterval.query.filter_by(user_id=user.id).delete()
+
+        for day_str, day_list in intervals_data.items():
             try:
                 day_of_week = int(day_str)
                 if not (1 <= day_of_week <= 7):
                     continue
-                
-                # Get or create interval for this day
-                interval = UserDailyTimeInterval.query.filter_by(
-                    user_id=user.id,
-                    day_of_week=day_of_week
-                ).first()
-                
-                if not interval:
+
+                for sort_idx, interval_data in enumerate(day_list):
+                    sh = int(interval_data.get('start_hour', 9))
+                    sm = int(interval_data.get('start_minute', 0))
+                    eh = int(interval_data.get('end_hour', 17))
+                    em = int(interval_data.get('end_minute', 0))
+
                     interval = UserDailyTimeInterval(
                         user_id=user.id,
-                        day_of_week=day_of_week
+                        day_of_week=day_of_week,
+                        start_hour=sh,
+                        start_minute=sm,
+                        end_hour=eh,
+                        end_minute=em,
+                        is_enabled=True,
+                        is_synced=False,
+                        sort_order=sort_idx,
                     )
+                    if not interval.is_valid_interval():
+                        day_names = ['', 'Monday', 'Tuesday', 'Wednesday',
+                                     'Thursday', 'Friday', 'Saturday', 'Sunday']
+                        return jsonify({
+                            'success': False,
+                            'message': f'Invalid interval on {day_names[day_of_week]}: '
+                                       f'{sh:02d}:{sm:02d}–{eh:02d}:{em:02d} (start must be before end)'
+                        }), 400
+
                     db.session.add(interval)
-                
-                # Update interval properties
-                interval.start_hour = int(interval_data.get('start_hour', 9))
-                interval.start_minute = int(interval_data.get('start_minute', 0))
-                interval.end_hour = int(interval_data.get('end_hour', 17))
-                interval.end_minute = int(interval_data.get('end_minute', 0))
-                interval.is_enabled = bool(interval_data.get('is_enabled', False))
-                
-                # Validate the interval
-                if not interval.is_valid_interval():
-                    return jsonify({
-                        'success': False,
-                        'message': f'Invalid time interval for {interval.get_day_name()}: start time must be before end time'
-                    }), 400
-                
-                # Mark as modified (needs sync)
-                interval.mark_modified()
-                
+
             except (ValueError, KeyError) as e:
-                return jsonify({
-                    'success': False,
-                    'message': f'Invalid data format: {str(e)}'
-                }), 400
-        
+                return jsonify({'success': False, 'message': f'Invalid data: {str(e)}'}), 400
+
         db.session.commit()
-        
+
         return jsonify({
             'success': True,
             'message': f'Time intervals updated for {user.username}',
             'username': user.username
         })
-        
+
     except Exception as e:
         db.session.rollback()
-        return jsonify({
-            'success': False,
-            'message': f'Error updating intervals: {str(e)}'
-        }), 500
+        return jsonify({'success': False, 'message': f'Error updating intervals: {str(e)}'}), 500
 
 @app.route('/api/user/<int:user_id>/intervals/sync-status')
 def get_intervals_sync_status(user_id):

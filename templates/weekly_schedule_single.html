@@ -160,30 +160,25 @@
             min-width: 40px;
         }
         
-        .interval-controls {
+        .interval-list {
             display: flex;
-            align-items: center;
-            gap: var(--space-3);
+            flex-direction: column;
+            gap: var(--space-2);
+            margin-bottom: var(--space-2);
         }
-        
-        .interval-toggle {
+
+        .interval-row {
             display: flex;
             align-items: center;
             gap: var(--space-2);
+            flex-wrap: wrap;
         }
-        
-        .interval-toggle input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--accent-primary);
+
+        .interval-row span {
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
         }
-        
-        .interval-time {
-            display: flex;
-            align-items: center;
-            gap: var(--space-2);
-        }
-        
+
         .time-select {
             padding: var(--space-1) var(--space-2);
             border: 1px solid var(--border-primary);
@@ -192,10 +187,48 @@
             color: var(--text-primary);
             font-size: var(--font-size-sm);
         }
-        
-        .time-select:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
+
+        .remove-interval-btn {
+            width: 22px;
+            height: 22px;
+            border: 1px solid var(--border-primary);
+            background: var(--bg-elevated);
+            color: var(--danger);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: var(--font-size-sm);
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .remove-interval-btn:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .add-interval-btn {
+            font-size: var(--font-size-xs);
+            padding: 2px var(--space-2);
+            border: 1px dashed var(--border-secondary);
+            background: transparent;
+            color: var(--accent-primary);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+        }
+
+        .add-interval-btn:hover {
+            background: var(--bg-secondary);
+        }
+
+        .schedule-row {
+            align-items: start;
+        }
+
+        .day-name {
+            padding-top: var(--space-2);
         }
         
         .actions-section {
@@ -230,11 +263,10 @@
                 border-radius: var(--radius-md);
             }
             
-            .interval-controls {
+            .interval-row {
                 flex-wrap: wrap;
-                justify-content: space-between;
             }
-            
+
             .schedule-controls {
                 flex-direction: column;
             }
@@ -338,21 +370,29 @@
                     <button type="button" class="btn btn-sm btn-secondary" onclick="setAllDays()">All Days</button>
                 </div>
                 <div class="quick-control">
-                    <label>Quick set interval:</label>
-                    <select id="bulk-start" class="time-select">
+                    <label>Add interval:</label>
+                    <select id="bulk-start-h" class="time-select">
                         {% for h in range(24) %}
-                        <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ '%02d:00'|format(h) }}</option>
+                        <option value="{{ h }}" {% if h == 9 %}selected{% endif %}>{{ '%02d'|format(h) }}</option>
+                        {% endfor %}
+                    </select>:<select id="bulk-start-m" class="time-select">
+                        {% for m in [0, 15, 30, 45] %}
+                        <option value="{{ m }}">{{ '%02d'|format(m) }}</option>
                         {% endfor %}
                     </select>
-                    <span>to</span>
-                    <select id="bulk-end" class="time-select">
+                    <span>–</span>
+                    <select id="bulk-end-h" class="time-select">
                         {% for h in range(24) %}
-                        <option value="{{ h }}" {% if h == 17 %}selected{% endif %}>{{ '%02d:00'|format(h) }}</option>
+                        <option value="{{ h }}" {% if h == 17 %}selected{% endif %}>{{ '%02d'|format(h) }}</option>
+                        {% endfor %}
+                    </select>:<select id="bulk-end-m" class="time-select">
+                        {% for m in [0, 15, 30, 45] %}
+                        <option value="{{ m }}">{{ '%02d'|format(m) }}</option>
                         {% endfor %}
                     </select>
-                    <button type="button" class="btn btn-sm btn-secondary" onclick="setWeekdayIntervals()">Weekdays</button>
-                    <button type="button" class="btn btn-sm btn-secondary" onclick="setWeekendIntervals()">Weekends</button>
-                    <button type="button" class="btn btn-sm btn-secondary" onclick="setAllIntervals()">All Days</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="addBulkIntervals([1,2,3,4,5])">Weekdays</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="addBulkIntervals([6,7])">Weekends</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="addBulkIntervals([1,2,3,4,5,6,7])">All Days</button>
                 </div>
             </div>
             
@@ -399,26 +439,9 @@
                         </div>
                         
                         <!-- Time Intervals -->
-                        <div class="time-section">
-                            <div class="interval-controls">
-                                <div class="interval-toggle">
-                                    <input type="checkbox" id="interval-{{ day_num }}" onchange="toggleInterval({{ day_num }})">
-                                    <label for="interval-{{ day_num }}">Enable</label>
-                                </div>
-                                <div class="interval-time">
-                                    <select id="start-{{ day_num }}" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d:00'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                    <span>to</span>
-                                    <select id="end-{{ day_num }}" class="time-select" disabled>
-                                        {% for h in range(24) %}
-                                        <option value="{{ h }}">{{ '%02d:00'|format(h) }}</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
+                        <div class="time-section" style="flex-direction: column; align-items: flex-start;">
+                            <div id="intervals-day-{{ day_num }}" class="interval-list"></div>
+                            <button type="button" class="add-interval-btn" onclick="addInterval({{ day_num }})">+ Add interval</button>
                         </div>
                     </div>
                     {% endfor %}
@@ -534,14 +557,11 @@
             }, 2000);
         }
         
-        // Intervals data
-        let intervals = {};
-        
         // Load intervals on page load
         document.addEventListener('DOMContentLoaded', function() {
             loadIntervals();
         });
-        
+
         // Time adjustment functions
         function adjustTime(dayId, change) {
             const input = document.getElementById(dayId);
@@ -549,8 +569,14 @@
             let newValue = Math.max(0, Math.min(24, currentValue + change));
             input.value = newValue;
         }
-        
-        // Bulk time setting functions
+
+        function adjustBulkTime(change) {
+            const input = document.getElementById('bulk-hours');
+            let currentValue = parseFloat(input.value) || 0;
+            let newValue = Math.max(0, Math.min(24, currentValue + change));
+            input.value = newValue;
+        }
+
         function setWeekdays() {
             const hours = document.getElementById('bulk-hours').value;
             if (!hours) return;
@@ -558,7 +584,7 @@
                 document.getElementById(day).value = hours;
             });
         }
-        
+
         function setWeekends() {
             const hours = document.getElementById('bulk-hours').value;
             if (!hours) return;
@@ -566,7 +592,7 @@
                 document.getElementById(day).value = hours;
             });
         }
-        
+
         function setAllDays() {
             const hours = document.getElementById('bulk-hours').value;
             if (!hours) return;
@@ -574,143 +600,154 @@
                 document.getElementById(day).value = hours;
             });
         }
-        
-        // Interval functions
-        function toggleInterval(day) {
-            const checkbox = document.getElementById(`interval-${day}`);
-            const startSelect = document.getElementById(`start-${day}`);
-            const endSelect = document.getElementById(`end-${day}`);
-            
-            startSelect.disabled = !checkbox.checked;
-            endSelect.disabled = !checkbox.checked;
-        }
-        
-        function setWeekdayIntervals() {
-            const startHour = document.getElementById('bulk-start').value;
-            const endHour = document.getElementById('bulk-end').value;
-            
-            for (let day = 1; day <= 5; day++) {
-                document.getElementById(`interval-${day}`).checked = true;
-                document.getElementById(`start-${day}`).value = startHour;
-                document.getElementById(`end-${day}`).value = endHour;
-                toggleInterval(day);
+
+        // Build a time <select> element for hours (0-23)
+        function makeHourSelect(cls, selectedVal) {
+            const sel = document.createElement('select');
+            sel.className = 'time-select ' + cls;
+            for (let h = 0; h < 24; h++) {
+                const opt = document.createElement('option');
+                opt.value = h;
+                opt.textContent = String(h).padStart(2, '0');
+                if (h === selectedVal) opt.selected = true;
+                sel.appendChild(opt);
             }
+            return sel;
         }
-        
-        function setWeekendIntervals() {
-            const startHour = document.getElementById('bulk-start').value;
-            const endHour = document.getElementById('bulk-end').value;
-            
-            // Apply to weekends (Saturday = 6, Sunday = 7)
-            for (let day = 6; day <= 7; day++) {
-                document.getElementById(`interval-${day}`).checked = true;
-                document.getElementById(`start-${day}`).value = startHour;
-                document.getElementById(`end-${day}`).value = endHour;
-                toggleInterval(day);
-            }
+
+        // Build a time <select> for minutes in 15-min steps
+        function makeMinuteSelect(cls, selectedVal) {
+            const sel = document.createElement('select');
+            sel.className = 'time-select ' + cls;
+            [0, 15, 30, 45].forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                opt.textContent = String(m).padStart(2, '0');
+                // Snap to nearest 15
+                if (m === Math.round(selectedVal / 15) * 15 % 60) opt.selected = true;
+                sel.appendChild(opt);
+            });
+            return sel;
         }
-        
-        function setAllIntervals() {
-            const startHour = document.getElementById('bulk-start').value;
-            const endHour = document.getElementById('bulk-end').value;
-            
-            for (let day = 1; day <= 7; day++) {
-                document.getElementById(`interval-${day}`).checked = true;
-                document.getElementById(`start-${day}`).value = startHour;
-                document.getElementById(`end-${day}`).value = endHour;
-                toggleInterval(day);
-            }
+
+        function renderIntervalRow(day, sh, sm, eh, em) {
+            const row = document.createElement('div');
+            row.className = 'interval-row';
+
+            row.appendChild(makeHourSelect('iv-sh', sh));
+            const colon1 = document.createElement('span'); colon1.textContent = ':';
+            row.appendChild(colon1);
+            row.appendChild(makeMinuteSelect('iv-sm', sm));
+
+            const dash = document.createElement('span'); dash.textContent = '–';
+            row.appendChild(dash);
+
+            row.appendChild(makeHourSelect('iv-eh', eh));
+            const colon2 = document.createElement('span'); colon2.textContent = ':';
+            row.appendChild(colon2);
+            row.appendChild(makeMinuteSelect('iv-em', em));
+
+            const delBtn = document.createElement('button');
+            delBtn.type = 'button';
+            delBtn.className = 'remove-interval-btn';
+            delBtn.title = 'Remove interval';
+            delBtn.textContent = '×';
+            delBtn.onclick = () => row.remove();
+            row.appendChild(delBtn);
+
+            return row;
         }
-        
+
+        function addInterval(day, sh=9, sm=0, eh=17, em=0) {
+            const list = document.getElementById(`intervals-day-${day}`);
+            list.appendChild(renderIntervalRow(day, sh, sm, eh, em));
+        }
+
+        function addBulkIntervals(days) {
+            const sh = parseInt(document.getElementById('bulk-start-h').value);
+            const sm = parseInt(document.getElementById('bulk-start-m').value);
+            const eh = parseInt(document.getElementById('bulk-end-h').value);
+            const em = parseInt(document.getElementById('bulk-end-m').value);
+            days.forEach(day => addInterval(day, sh, sm, eh, em));
+        }
+
         function loadIntervals() {
             fetch(`/api/user/{{ user.id }}/intervals`)
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
-                    if (data.success) {
-                        intervals = data.intervals;
-                        for (let day = 1; day <= 7; day++) {
-                            const interval = intervals[day];
-                            if (interval) {
-                                document.getElementById(`interval-${day}`).checked = interval.is_enabled;
-                                document.getElementById(`start-${day}`).value = interval.start_hour;
-                                document.getElementById(`end-${day}`).value = interval.end_hour;
-                                toggleInterval(day);
-                            }
-                        }
+                    if (!data.success) return;
+                    for (let day = 1; day <= 7; day++) {
+                        const list = document.getElementById(`intervals-day-${day}`);
+                        list.innerHTML = '';
+                        const dayIntervals = data.intervals[String(day)] || [];
+                        dayIntervals.forEach(iv => {
+                            list.appendChild(renderIntervalRow(day,
+                                iv.start_hour, iv.start_minute,
+                                iv.end_hour, iv.end_minute));
+                        });
                     }
                 });
         }
-        
-        // Add bulk time adjustment function
-        function adjustBulkTime(change) {
-            const input = document.getElementById('bulk-hours');
-            let currentValue = parseFloat(input.value) || 0;
-            let newValue = Math.max(0, Math.min(24, currentValue + change));
-            input.value = newValue;
+
+        function collectIntervals() {
+            const result = {};
+            for (let day = 1; day <= 7; day++) {
+                const list = document.getElementById(`intervals-day-${day}`);
+                const rows = list.querySelectorAll('.interval-row');
+                result[day] = [];
+                for (const row of rows) {
+                    const sh = parseInt(row.querySelector('.iv-sh').value);
+                    const sm = parseInt(row.querySelector('.iv-sm').value);
+                    const eh = parseInt(row.querySelector('.iv-eh').value);
+                    const em = parseInt(row.querySelector('.iv-em').value);
+                    const startMins = sh * 60 + sm;
+                    const endMins = eh * 60 + em;
+                    if (startMins >= endMins) {
+                        const dayNames = ['','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+                        throw new Error(`${dayNames[day]}: start time must be before end time`);
+                    }
+                    result[day].push({ start_hour: sh, start_minute: sm, end_hour: eh, end_minute: em });
+                }
+            }
+            return result;
         }
-        
+
         // Combined save function for both schedule and intervals
         function saveAll() {
-            // First, save the schedule by submitting the form
             const form = document.getElementById('schedule-form');
             const formData = new FormData(form);
-            
-            // Save schedule
-            fetch(form.action, {
-                method: 'POST',
-                body: formData
-            })
+
+            fetch(form.action, { method: 'POST', body: formData })
             .then(response => {
-                if (response.ok) {
-                    // If schedule save successful, now save intervals
-                    return saveIntervals(false); // false means don't show alert yet
-                } else {
-                    throw new Error('Failed to save schedule');
-                }
+                if (!response.ok) throw new Error('Failed to save schedule');
+                return saveIntervals(false);
             })
             .then(() => {
                 showNotification('All changes saved successfully!');
-                // Update status immediately instead of reloading
-                setTimeout(() => {
-                    updateSyncStatus();
-                }, 1000);
+                setTimeout(() => updateSyncStatus(), 1000);
             })
             .catch(error => {
                 showNotification('Error saving changes: ' + error.message, 'error');
             });
         }
-        
+
         function saveIntervals(showAlert = true) {
             return new Promise((resolve, reject) => {
-                const intervalData = {};
-                
-                for (let day = 1; day <= 7; day++) {
-                    const enabled = document.getElementById(`interval-${day}`).checked;
-                    const startHour = parseInt(document.getElementById(`start-${day}`).value);
-                    const endHour = parseInt(document.getElementById(`end-${day}`).value);
-                    
-                    if (enabled && startHour >= endHour) {
-                        const error = `Invalid time range for day ${day}: start time must be before end time`;
-                        if (showAlert) showNotification(error, 'error');
-                        reject(new Error(error));
-                        return;
-                    }
-                    
-                    intervalData[day] = {
-                        is_enabled: enabled,
-                        start_hour: startHour,
-                        start_minute: 0,
-                        end_hour: endHour,
-                        end_minute: 0
-                    };
+                let intervalData;
+                try {
+                    intervalData = collectIntervals();
+                } catch (e) {
+                    if (showAlert) showNotification(e.message, 'error');
+                    reject(e);
+                    return;
                 }
-                
+
                 fetch(`/api/user/{{ user.id }}/intervals/update`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ intervals: intervalData })
                 })
-                .then(response => response.json())
+                .then(r => r.json())
                 .then(data => {
                     if (data.success) {
                         if (showAlert) {

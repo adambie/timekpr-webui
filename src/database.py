@@ -314,16 +314,14 @@ class UserDailyTimeInterval(db.Model):
     last_synced = db.Column(db.DateTime, nullable=True)
     last_modified = db.Column(db.DateTime, default=datetime.utcnow)
     
+    # Order within a day (for multiple intervals)
+    sort_order = db.Column(db.Integer, default=0)
+
     # Relationship back to user
     user = db.relationship('ManagedUser', backref=db.backref('time_intervals', cascade='all, delete-orphan'))
-    
-    # Constraint to ensure only one interval per user per day
-    __table_args__ = (
-        db.UniqueConstraint('user_id', 'day_of_week', name='user_day_interval_uc'),
-    )
-    
+
     def __repr__(self):
-        return f'<UserDailyTimeInterval {self.user.username} Day{self.day_of_week} {self.start_hour:02d}:{self.start_minute:02d}-{self.end_hour:02d}:{self.end_minute:02d}>'
+        return f'<UserDailyTimeInterval {self.user_id} Day{self.day_of_week} {self.start_hour:02d}:{self.start_minute:02d}-{self.end_hour:02d}:{self.end_minute:02d}>'
     
     def get_time_range_string(self):
         """Get formatted time range string (e.g., '09:00-17:30')"""

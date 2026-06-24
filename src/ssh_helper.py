@@ -314,9 +314,9 @@ class SSHClient:
     
     def set_allowed_hours(self, username, intervals_dict):
         """
-        Set allowed hours for a user using timekpra --setallowedhours command
-        intervals_dict should contain day_of_week (1-7) keys with UserDailyTimeInterval objects
-        
+        Set allowed hours for a user using timekpra --setallowedhours command.
+        intervals_dict maps day_of_week (1-7) to a list of UserDailyTimeInterval objects.
+
         Returns: (success, message)
         """
         import logging
@@ -353,12 +353,23 @@ class SSHClient:
             
             for day_num in day_order:
                 day_name = day_names[day_num]
-                interval = intervals_dict.get(day_num)
-                
-                if interval and interval.is_enabled and interval.is_valid_interval():
-                    # Convert interval to timekpr format
-                    hour_specs = interval.to_timekpr_format()
-                    
+                day_intervals = intervals_dict.get(day_num, [])
+                # Accept both a single object (legacy) and a list
+                if not isinstance(day_intervals, list):
+                    day_intervals = [day_intervals]
+                enabled = [iv for iv in day_intervals if iv and iv.is_enabled and iv.is_valid_interval()]
+
+                if enabled:
+                    # Merge hour specs from all intervals for this day
+                    all_specs = []
+                    for iv in enabled:
+                        specs = iv.to_timekpr_format()
+                        if specs:
+                            all_specs.extend(specs)
+                    # Sort by numeric hour prefix so the string is ordered
+                    all_specs.sort(key=lambda x: int(x.split('[')[0]))
+                    hour_specs = all_specs
+
                     if hour_specs:
                         hour_string = ';'.join(hour_specs)
                         

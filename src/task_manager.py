@@ -199,10 +199,10 @@ class BackgroundTaskManager:
                     if unsynced_intervals:
                         logger.info(f"Attempting to sync {len(unsynced_intervals)} time intervals for {user.username}")
                         
-                        # Build intervals dict for SSH command
+                        # Build intervals dict for SSH command (list per day)
                         intervals_dict = {}
                         for interval in user.time_intervals:
-                            intervals_dict[interval.day_of_week] = interval
+                            intervals_dict.setdefault(interval.day_of_week, []).append(interval)
                         
                         success, message = ssh_client.set_allowed_hours(user.username, intervals_dict)
                         
