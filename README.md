@@ -1,5 +1,10 @@
 # TimeKpr WebUI
 
+> [!IMPORTANT]
+> **This project is no longer actively developed.** Only reported bugs will be fixed going forward.
+>
+> If you're looking for a modern alternative, check out **[Screenguard](https://github.com/adambie/screenguard)** — a self-hosted parental controls system for Linux with a central server, REST API, web UI, and a **mobile app**. No cloud required.
+
 A web-based interface for managing TimeKpr parental controls across multiple computers in your network.
 
 ![Timekpr Dashboard](docs/dashboard.png)
