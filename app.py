@@ -16,6 +16,7 @@ from src.database import (
 )
 from src.ssh_helper import SSHClient
 from src.task_manager import BackgroundTaskManager
+from src.migrator import run_migrations
 
 # Configure logging
 logging.basicConfig(
@@ -691,6 +692,8 @@ def modify_time():
 with app.app_context():
     db.create_all()
     print("Database tables verified")
+    run_migrations(app)
+    print("Database migrations applied")
     
     # Initialize admin password if it doesn't exist
     if not Settings.get_value('admin_password_hash', None) and not Settings.get_value('admin_password', None):

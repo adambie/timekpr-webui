@@ -1,8 +1,9 @@
 """
-Migration: allow multiple time intervals per user per day.
+DEPRECATED: this one-shot script is superseded by the migration runner.
+The equivalent logic lives in migrations/001_add_sort_order.py and runs
+automatically on app startup via src/migrator.py.
 
-Drops the unique constraint on (user_id, day_of_week) and adds a sort_order column.
-SQLite doesn't support ALTER TABLE DROP CONSTRAINT, so we rebuild the table.
+Kept here only for reference.
 """
 import sqlite3
 import os
